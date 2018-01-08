@@ -36,7 +36,12 @@ func main() {
 		}
 
 		// Fetch keys from Db
-		keys := [5]string{"bdfajfsnkjav", "bdfajfsnkjav", "bdfajfsnkjav", "bdfajfsnkjav", "bdfajfsnkjav"}
+		keys := [5]string{
+			"bdfajfsnkjav",
+			"bdfajfsnkjav",
+			"bdfajfsnkjav",
+			"bdfajfsnkjav",
+			"bdfajfsnkjav"}
 
 		return c.JSON(http.StatusOK, keys)
 	})
@@ -50,18 +55,20 @@ func main() {
 
 		// Modify key property
 
-		response := JsonResponse{Message: "Key" + keyID + " updated.", TimeStamp: time.Now().Unix()}
+		response := JsonResponse{Message: keyID, TimeStamp: time.Now().Unix()}
 		return c.JSON(http.StatusOK, response)
 	})
 
 	// Delete existing key by key_id
 	server.DELETE("/keys/:key_id", func(c echo.Context) error {
+		keyID := c.Param("key_id")
+
 		// Search for key in db.
 		// if it doesnt exist, do nothing
 
 		// Remove entry
 
-		response := JsonResponse{Message: "Key removed.", TimeStamp: time.Now().Unix()}
+		response := JsonResponse{Message: keyID, TimeStamp: time.Now().Unix()}
 		return c.JSON(http.StatusOK, response)
 	})
 
