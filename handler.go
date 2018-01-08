@@ -12,7 +12,7 @@ type Handler struct {
 
 // Create new key
 func (h *Handler) createKey(c echo.Context) (err error) {
-	nk := new(NewKey)
+	nk := new(KeyModel)
 
 	if err = c.Bind(nk); err != nil {
 		response := JsonResponse{Message: "Invalid request payload\n", TimeStamp: time.Now().Unix()}
@@ -24,12 +24,13 @@ func (h *Handler) createKey(c echo.Context) (err error) {
 
 	// Return new value.
 	response := JsonResponse{Message: nk.Key + nk.Provider + nk.UserID, TimeStamp: time.Now().Unix()}
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusCreated, response)
 }
 
 // Retrieve all keys in storage
 func (h *Handler) getKeys(c echo.Context) error {
 	var userID = c.QueryParam("user_id")
+
 	if userID == "" {
 		err := JsonResponse{Message: "'user_id' is missing.", TimeStamp: time.Now().Unix()}
 		return c.JSON(http.StatusBadRequest, err)
