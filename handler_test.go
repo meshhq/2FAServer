@@ -14,32 +14,19 @@ import (
 )
 
 var (
-	h                  = new(Handler)
-	newKeyJSON         = `{"user_id":"aGithubUserId","key":"12345678901234567890","provider":"aProvider"}`
-	newKeyJSONResponse = `{"timestamp":` + strconv.Itoa(int(time.Now().Unix())) + `,"message":"12345678901234567890aProvideraGithubUserId"}`
-	testUserID         = "1e3243566776998723t3reververv"
+	h                     = new(Handler)
+	newKeyJSON            = `{"user_id":"aGithubUserId","key":"12345678901234567890","provider":"aProvider"}`
+	newKeyJSONResponse    = `{"timestamp":` + strconv.Itoa(int(time.Now().Unix())) + `,"message":"12345678901234567890aProvideraGithubUserId"}`
+	updateKeyJSONResponse = `{"timestamp":` + strconv.Itoa(int(time.Now().Unix())) + `,"message":"` + testUserID + `"}`
+	deleteKeyJSONResponse = `{"timestamp":` + strconv.Itoa(int(time.Now().Unix())) + `,"message":"` + testUserID + `"}`
+	testUserID            = "1e3243566776998723t3reververv"
 )
 
-func createRequest(verb string, payload string, path string) *http.Request {
-	var req *http.Request
-
-	switch verb {
-	case echo.GET:
-		req = httptest.NewRequest(verb, ApiPath+path, nil)
-		break
-
-	default:
-		req = httptest.NewRequest(verb, ApiPath+path, strings.NewReader(payload))
-		req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
-	}
-
-	return req
-}
-
 func TestCreateKey(t *testing.T) {
-	// Setup
 	e := echo.New()
-	req := createRequest(echo.POST, newKeyJSON, "")
+
+	req := httptest.NewRequest(echo.POST, ApiPath, strings.NewReader(newKeyJSON))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -51,10 +38,9 @@ func TestCreateKey(t *testing.T) {
 }
 
 func TestGetKeys(t *testing.T) {
-	// Setup
 	e := echo.New()
 
-	req := createRequest(echo.GET, "", "?user_id="+testUserID)
+	req := httptest.NewRequest(echo.GET, ApiPath+"?user_id="+testUserID, nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -65,5 +51,43 @@ func TestGetKeys(t *testing.T) {
 		var raw []string
 		json.Unmarshal(rec.Body.Bytes(), &raw)
 		assert.True(t, len(raw) == 5)
+	}
+}
+
+func TestUpdateKey(t *testing.T) {
+	e := echo.New()
+
+	req := httptest.NewRequest(echo.PUT, ApiPath, nil)
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath(ApiPath + "/:key_id")
+	c.SetParamNames("key_id")
+	c.SetParamValues(testUserID)
+
+	// Assertions
+	if assert.NoError(t, h.updateKey(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		assert.Equal(t, updateKeyJSONResponse, rec.Body.String())
+	}
+}
+
+func TestDeleteKey(t *testing.T) {
+	e := echo.New()
+
+	req := httptest.NewRequest(echo.DELETE, ApiPath, nil)
+	rec := httptest.NewRecorder()
+
+	c := e.NewContext(req, rec)
+	c.SetPath(ApiPath + "/:key_id")
+	c.SetParamNames("key_id")
+	c.SetParamValues(testUserID)
+
+	// Assertions
+	if assert.NoError(t, h.updateKey(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		assert.Equal(t, deleteKeyJSONResponse, rec.Body.String())
 	}
 }
