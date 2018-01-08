@@ -1,4 +1,4 @@
-package main
+package handler
 
 import (
 	"encoding/json"
@@ -9,12 +9,14 @@ import (
 	"testing"
 	"time"
 
+	"2FAServer/configuration"
+
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	h                     = new(Handler)
+	h                     = new(KeyHandler)
 	newKeyJSON            = `{"user_id":"aGithubUserId","key":"12345678901234567890","provider":"aProvider"}`
 	newKeyJSONResponse    = `{"timestamp":` + strconv.Itoa(int(time.Now().Unix())) + `,"message":"12345678901234567890aProvideraGithubUserId"}`
 	updateKeyJSONResponse = `{"timestamp":` + strconv.Itoa(int(time.Now().Unix())) + `,"message":"` + testUserID + `"}`
@@ -25,13 +27,13 @@ var (
 func TestCreateKey(t *testing.T) {
 	e := echo.New()
 
-	req := httptest.NewRequest(echo.POST, ApiPath, strings.NewReader(newKeyJSON))
+	req := httptest.NewRequest(echo.POST, configuration.APIPath, strings.NewReader(newKeyJSON))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
 	// Assertions
-	if assert.NoError(t, h.createKey(c)) {
+	if assert.NoError(t, h.CreateKey(c)) {
 		assert.Equal(t, http.StatusCreated, rec.Code)
 		assert.Equal(t, newKeyJSONResponse, rec.Body.String())
 	}
@@ -40,12 +42,12 @@ func TestCreateKey(t *testing.T) {
 func TestGetKeys(t *testing.T) {
 	e := echo.New()
 
-	req := httptest.NewRequest(echo.GET, ApiPath+"?user_id="+testUserID, nil)
+	req := httptest.NewRequest(echo.GET, configuration.APIPath+"?user_id="+testUserID, nil)
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
 	// Assertions
-	if assert.NoError(t, h.getKeys(c)) {
+	if assert.NoError(t, h.GetKeys(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		var raw []string
@@ -57,16 +59,16 @@ func TestGetKeys(t *testing.T) {
 func TestUpdateKey(t *testing.T) {
 	e := echo.New()
 
-	req := httptest.NewRequest(echo.PUT, ApiPath, nil)
+	req := httptest.NewRequest(echo.PUT, configuration.APIPath, nil)
 	rec := httptest.NewRecorder()
 
 	c := e.NewContext(req, rec)
-	c.SetPath(ApiPath + "/:key_id")
+	c.SetPath(configuration.APIPath + "/:key_id")
 	c.SetParamNames("key_id")
 	c.SetParamValues(testUserID)
 
 	// Assertions
-	if assert.NoError(t, h.updateKey(c)) {
+	if assert.NoError(t, h.UpdateKey(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		assert.Equal(t, updateKeyJSONResponse, rec.Body.String())
@@ -76,16 +78,16 @@ func TestUpdateKey(t *testing.T) {
 func TestDeleteKey(t *testing.T) {
 	e := echo.New()
 
-	req := httptest.NewRequest(echo.DELETE, ApiPath, nil)
+	req := httptest.NewRequest(echo.DELETE, configuration.APIPath, nil)
 	rec := httptest.NewRecorder()
 
 	c := e.NewContext(req, rec)
-	c.SetPath(ApiPath + "/:key_id")
+	c.SetPath(configuration.APIPath + "/:key_id")
 	c.SetParamNames("key_id")
 	c.SetParamValues(testUserID)
 
 	// Assertions
-	if assert.NoError(t, h.updateKey(c)) {
+	if assert.NoError(t, h.DeleteKey(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
 
 		assert.Equal(t, deleteKeyJSONResponse, rec.Body.String())

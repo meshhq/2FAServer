@@ -1,21 +1,23 @@
-package main
+package handler
 
 import (
 	"net/http"
 	"time"
 
+	"2FAServer/models"
+
 	"github.com/labstack/echo"
 )
 
-type Handler struct {
+type KeyHandler struct {
 }
 
 // Create new key
-func (h *Handler) createKey(c echo.Context) (err error) {
-	nk := new(KeyModel)
+func (h *KeyHandler) CreateKey(c echo.Context) (err error) {
+	nk := new(models.Key)
 
 	if err = c.Bind(nk); err != nil {
-		response := JsonResponse{Message: "Invalid request payload\n", TimeStamp: time.Now().Unix()}
+		response := models.JSONResponse{Message: "Invalid request payload\n", TimeStamp: time.Now().Unix()}
 		return c.JSON(http.StatusBadRequest, response)
 	}
 
@@ -23,16 +25,16 @@ func (h *Handler) createKey(c echo.Context) (err error) {
 	// if it doesnt exist, create.
 
 	// Return new value.
-	response := JsonResponse{Message: nk.Key + nk.Provider + nk.UserID, TimeStamp: time.Now().Unix()}
+	response := models.JSONResponse{Message: nk.Key + nk.Provider + nk.UserID, TimeStamp: time.Now().Unix()}
 	return c.JSON(http.StatusCreated, response)
 }
 
 // Retrieve all keys in storage
-func (h *Handler) getKeys(c echo.Context) error {
+func (h *KeyHandler) GetKeys(c echo.Context) error {
 	var userID = c.QueryParam("user_id")
 
 	if userID == "" {
-		err := JsonResponse{Message: "'user_id' is missing.", TimeStamp: time.Now().Unix()}
+		err := models.JSONResponse{Message: "'user_id' is missing.", TimeStamp: time.Now().Unix()}
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
@@ -48,7 +50,7 @@ func (h *Handler) getKeys(c echo.Context) error {
 }
 
 // Update existing key by key_id
-func (h *Handler) updateKey(c echo.Context) error {
+func (h *KeyHandler) UpdateKey(c echo.Context) error {
 	keyID := c.Param("key_id")
 
 	// Search for key in db.
@@ -56,12 +58,12 @@ func (h *Handler) updateKey(c echo.Context) error {
 
 	// Modify key property
 
-	response := JsonResponse{Message: keyID, TimeStamp: time.Now().Unix()}
+	response := models.JSONResponse{Message: keyID, TimeStamp: time.Now().Unix()}
 	return c.JSON(http.StatusOK, response)
 }
 
 // Delete existing key by key_id
-func (h *Handler) deleteKey(c echo.Context) error {
+func (h *KeyHandler) DeleteKey(c echo.Context) error {
 	keyID := c.Param("key_id")
 
 	// Search for key in db.
@@ -69,6 +71,6 @@ func (h *Handler) deleteKey(c echo.Context) error {
 
 	// Remove entry
 
-	response := JsonResponse{Message: keyID, TimeStamp: time.Now().Unix()}
+	response := models.JSONResponse{Message: keyID, TimeStamp: time.Now().Unix()}
 	return c.JSON(http.StatusOK, response)
 }
