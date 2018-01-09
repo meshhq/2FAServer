@@ -10,8 +10,6 @@ import (
 	"github.com/go-pg/pg"
 )
 
-const USER = "postgres"
-
 type dbContext struct {
 	connection *pg.DB
 }
@@ -40,11 +38,12 @@ func NewDbContext() *dbContext {
 func initializeDb() *pg.DB {
 	user := os.Getenv("PG_USERNAME")
 	password := os.Getenv("PG_PASSWORD")
+	database := os.Getenv("PG_DATABASE")
 
 	return pg.Connect(&pg.Options{
 		User:     user,
 		Password: password,
-		Database: "2FAuth",
+		Database: database,
 	})
 }
 
