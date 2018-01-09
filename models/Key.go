@@ -3,7 +3,8 @@ package models
 import "fmt"
 
 type Key struct {
-	Key      string `json:"key" validate:"required" sql:",pk"`
+	KeyID    string `json:"key_id" validate:"required" sql:",pk"`
+	Key      string `json:"key" validate:"required"`
 	UserID   string `json:"user_id" validate:"required"`
 	Provider string `json:"provider" validate:"required"`
 }

@@ -2,6 +2,7 @@ package db
 
 import (
 	"2FAServer/models"
+	"fmt"
 	"log"
 	"os"
 	"time"
@@ -31,7 +32,7 @@ func NewDbContext() *dbContext {
 	// err := dbc.createSchema()
 	// if err != nil {
 	// 	panic(err)
-	//}
+	// }
 
 	return dbc
 }
@@ -57,12 +58,11 @@ func (dbc dbContext) createSchema() error {
 	return nil
 }
 
-func (dbc dbContext) GetModel(id string) models.Key {
-	aKey := models.Key{Key: id}
+func (dbc dbContext) GetModel(keyID string) models.Key {
+	aKey := models.Key{KeyID: keyID}
 	err := dbc.connection.Select(&aKey)
-
 	if err != nil && err != pg.ErrNoRows {
-		// Log the error. Panic for now.
+		// TODO: Log the error. Panic for now.
 		panic(err)
 	}
 
@@ -76,9 +76,8 @@ func (dbc dbContext) GetModel(id string) models.Key {
 func (dbc dbContext) GetModels(userID string) []models.Key {
 	var res []models.Key
 	err := dbc.connection.Model(&models.Key{}).Where("user_id = ?", userID).Select(&res)
-
 	if err != nil && err != pg.ErrNoRows {
-		// Log the error. Panic for now.
+		// TODO: Log the error. Panic for now.
 		panic(err)
 	}
 
@@ -91,24 +90,37 @@ func (dbc dbContext) GetModels(userID string) []models.Key {
 
 func (dbc dbContext) InsertModel(m models.Key) bool {
 	err := dbc.connection.Insert(&m)
-
 	if err != nil {
-		// Log the error.
+		// TODO: Log the error.
 		return false
 	}
 
 	return true
 }
 
-// TODO: Complete this
-func (dbc dbContext) DeleteModel(m models.Key) {
-	// key1 := &models.Key{
-	// 	Key:      "4f70541a92f4b875b0d8c91cad8bcd02",
-	// 	UserID:   "aUserForThisKey",
-	// 	Provider: "Facebook"}
-
-	err := dbc.connection.Delete(m)
-	if err != nil {
-		panic(err)
+func (dbc dbContext) UpdateModel(keyID, key string) bool {
+	aKey := models.Key{
+		KeyID: keyID,
+		Key:   key,
 	}
+
+	res, err := dbc.connection.Model(&aKey).Column("key").Update()
+	if err != nil {
+		// TODO: Log the error.
+		return false
+	}
+
+	fmt.Println(res)
+
+	return true
+}
+
+func (dbc dbContext) DeleteModel(m models.Key) bool {
+	err := dbc.connection.Delete(&m)
+	if err != nil {
+		// TODO: Log the error.
+		return false
+	}
+
+	return true
 }

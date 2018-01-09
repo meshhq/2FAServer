@@ -2,7 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"time"
 
 	"2FAServer/db"
 	"2FAServer/models"
@@ -15,7 +14,7 @@ var dbc = db.NewDbContext()
 type KeyHandler struct {
 }
 
-// Create new key
+// Create new Key record.
 func (h *KeyHandler) CreateKey(c echo.Context) (err error) {
 	nk := new(models.Key)
 	if err = c.Bind(nk); err != nil {
@@ -23,9 +22,9 @@ func (h *KeyHandler) CreateKey(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, e)
 	}
 
-	// Retrieve existing if any.
-	existingKey := dbc.GetModel(nk.Key)
-	if existingKey.Key != "" {
+	// Retrieve existing if any and return it.
+	existingKey := dbc.GetModel(nk.KeyID)
+	if existingKey.KeyID != "" {
 		return c.JSON(http.StatusOK, models.NewJSONResponse(existingKey, ""))
 	}
 
@@ -39,7 +38,7 @@ func (h *KeyHandler) CreateKey(c echo.Context) (err error) {
 }
 
 // Retrieve all keys in storage by user_id
-func (h *KeyHandler) GetKeys(c echo.Context) error {
+func (h *KeyHandler) GetKeys(c echo.Context) (err error) {
 	var userID = c.QueryParam("user_id")
 	if userID == "" {
 		err := models.NewJSONResponse(nil, "Property 'user_id' is missing.")
@@ -51,27 +50,38 @@ func (h *KeyHandler) GetKeys(c echo.Context) error {
 }
 
 // Update existing key by key_id
-func (h *KeyHandler) UpdateKey(c echo.Context) error {
+func (h *KeyHandler) UpdateKey(c echo.Context) (err error) {
 	keyID := c.Param("key_id")
+	key := new(models.Key)
+
+	if err = c.Bind(key); err != nil {
+		e := models.NewJSONResponse(nil, "Invalid request payload.")
+		return c.JSON(http.StatusBadRequest, e)
+	}
 
 	// Search for key in db.
-	// if it doesnt exist, do nothing
+	existingKey := dbc.GetModel(keyID)
+	if existingKey.Key == "" {
+		return c.JSON(http.StatusBadRequest, models.NewJSONResponse(nil, "Element does not exist."))
+	}
 
 	// Modify key property
+	updated := dbc.UpdateModel(keyID, key.Key)
+	if !updated {
+		return c.JSON(http.StatusBadRequest, models.NewJSONResponse(nil, "Could not update key."))
+	}
 
-	response := models.JSONResponse{Message: keyID, TimeStamp: time.Now().Unix()}
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, models.NewJSONResponse(nil, keyID))
 }
 
-// Delete existing key by key_id
+// Delete existing key by Key_id
 func (h *KeyHandler) DeleteKey(c echo.Context) error {
 	keyID := c.Param("key_id")
 
-	// Search for key in db.
-	// if it doesnt exist, do nothing
+	removed := dbc.DeleteModel(models.Key{KeyID: keyID})
+	if !removed {
+		return c.JSON(http.StatusBadRequest, models.NewJSONResponse(nil, "Could not remove key."))
+	}
 
-	// Remove entry
-
-	response := models.JSONResponse{Message: keyID, TimeStamp: time.Now().Unix()}
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, models.NewJSONResponse(nil, keyID))
 }
