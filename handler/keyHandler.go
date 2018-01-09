@@ -4,10 +4,13 @@ import (
 	"net/http"
 	"time"
 
+	"2FAServer/db"
 	"2FAServer/models"
 
 	"github.com/labstack/echo"
 )
+
+var dbc = db.NewDbContext()
 
 type KeyHandler struct {
 }
@@ -15,38 +18,36 @@ type KeyHandler struct {
 // Create new key
 func (h *KeyHandler) CreateKey(c echo.Context) (err error) {
 	nk := new(models.Key)
-
 	if err = c.Bind(nk); err != nil {
-		response := models.JSONResponse{Message: "Invalid request payload\n", TimeStamp: time.Now().Unix()}
-		return c.JSON(http.StatusBadRequest, response)
+		e := models.NewJSONResponse(nil, "Invalid request payload.")
+		return c.JSON(http.StatusBadRequest, e)
 	}
 
-	// Search for key in db.
-	// if it doesnt exist, create.
+	// Retrieve existing if any.
+	existingKey := dbc.GetModel(nk.Key)
+	if existingKey.Key != "" {
+		return c.JSON(http.StatusOK, models.NewJSONResponse(existingKey, ""))
+	}
 
-	// Return new value.
-	response := models.JSONResponse{Message: nk.Key + nk.Provider + nk.UserID, TimeStamp: time.Now().Unix()}
-	return c.JSON(http.StatusCreated, response)
+	saved := dbc.InsertModel(*nk)
+	if !saved {
+		e := models.NewJSONResponse(nil, "Could not create key.")
+		return c.JSON(http.StatusBadRequest, e)
+	}
+
+	return c.JSON(http.StatusOK, models.NewJSONResponse(nk, ""))
 }
 
-// Retrieve all keys in storage
+// Retrieve all keys in storage by user_id
 func (h *KeyHandler) GetKeys(c echo.Context) error {
 	var userID = c.QueryParam("user_id")
-
 	if userID == "" {
-		err := models.JSONResponse{Message: "'user_id' is missing.", TimeStamp: time.Now().Unix()}
+		err := models.NewJSONResponse(nil, "Property 'user_id' is missing.")
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	// Fetch keys from Db
-	keys := [5]string{
-		"bdfajfsnkjav",
-		"bdfajfsnkjav",
-		"bdfajfsnkjav",
-		"bdfajfsnkjav",
-		"bdfajfsnkjav"}
-
-	return c.JSON(http.StatusOK, keys)
+	keys := dbc.GetModels(userID)
+	return c.JSON(http.StatusOK, models.NewJSONResponse(keys, ""))
 }
 
 // Update existing key by key_id
