@@ -14,6 +14,7 @@ type dbContext struct {
 	connection *pg.DB
 }
 
+// NewDbContext DbContext constructor.
 func NewDbContext() *dbContext {
 	dbc := new(dbContext)
 	dbc.connection = initializeDb()
