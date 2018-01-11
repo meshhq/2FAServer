@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/icrowley/fake"
+
 	"2FAServer/configuration"
 	"2FAServer/db"
 	"2FAServer/handler"
@@ -21,12 +23,12 @@ var (
 	h       = handler.KeyHandler{DbContext: new(db.MockDbContext)}
 	testKey = models.Key{
 		KeyID:    1,
-		UserID:   "leonardojperez",
-		Key:      "e890b5b83a133b70cea4b069f401baf4",
-		Provider: "MeshStudioAuthProvider",
+		UserID:   fake.UserName(),
+		Key:      fake.Password(10, 20, true, true, true),
+		Provider: fake.Word(),
 	}
 	testUpdateKey = models.Key{
-		Key: "f90721c90de9bd9ef516bea0b184fd30",
+		Key: fake.Password(10, 20, true, true, true),
 	}
 )
 
@@ -52,7 +54,7 @@ func TestCreateKey(t *testing.T) {
 
 	// Assertions
 	if assert.NoError(t, h.CreateKey(c)) {
-		expected, err := json.Marshal(models.NewJSONResponse(testKey, "Success"))
+		expected, err := json.Marshal(models.NewJSONResponse(testKey, configuration.Success))
 		if err != nil {
 		}
 
