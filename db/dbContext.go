@@ -5,7 +5,10 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"time"
+
+	"github.com/go-pg/pg/orm"
 
 	"github.com/go-pg/pg"
 )
@@ -29,14 +32,20 @@ func NewDbContext() DbContextInterface {
 	dbc := new(dbContext)
 	dbc.connection = initializeDb()
 
-	dbc.connection.OnQueryProcessed(func(event *pg.QueryProcessedEvent) {
-		query, err := event.FormattedQuery()
-		if err != nil {
-			panic(err)
-		}
+	isDebug, err := strconv.ParseBool(os.Getenv("DEBUG"))
+	if isDebug && err == nil {
+		dbc.connection.OnQueryProcessed(func(event *pg.QueryProcessedEvent) {
+			query, err := event.FormattedQuery()
+			if err != nil {
+				panic(err)
+			}
 
-		log.Printf("%s %s", time.Since(event.StartTime), query)
-	})
+			log.Printf("%s %s", time.Since(event.StartTime), query)
+		})
+	}
+
+	// Create table if not exist.
+	dbc.CreateSchema()
 
 	return dbc
 }
@@ -46,18 +55,33 @@ func initializeDb() *pg.DB {
 	user := os.Getenv("PG_USERNAME")
 	password := os.Getenv("PG_PASSWORD")
 	database := os.Getenv("PG_DATABASE")
+	hostname := os.Getenv("PG_HOSTNAME")
+	port := os.Getenv("PG_PORT")
+
+	if hostname == "" {
+		hostname = "127.0.0.1"
+	}
+
+	if port == "" {
+		port = "5432"
+	}
+
+	fmt.Println("Connecting to " + hostname + ":" + port)
 
 	return pg.Connect(&pg.Options{
 		User:     user,
 		Password: password,
 		Database: database,
+		Addr:     hostname + ":" + port,
 	})
 }
 
 // CreateSchema defines a new of tables based on models.Key struct.
 func (dbc *dbContext) CreateSchema() error {
 	for _, model := range []interface{}{&models.Key{}} {
-		err := dbc.connection.CreateTable(model, nil)
+		err := dbc.connection.CreateTable(model, &orm.CreateTableOptions{
+			IfNotExists: true,
+		})
 		if err != nil {
 			return err
 		}

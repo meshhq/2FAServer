@@ -1,15 +1,21 @@
-FROM golang:1.8
-
-WORKDIR /go/src/server
-
-COPY . .
- 
-RUN go install -v
+FROM golang:latest 
 
 ENV PG_USERNAME="postgres"
-ENV PG_PASSWORD="swordfsih987"
-ENV PG_DATABASE="2FAuth"
+ENV PG_PASSWORD=""
+ENV PG_DATABASE="2FactorAuth"
+ENV PG_HOSTNAME="127.0.0.1"
+ENV PG_PORT="32768"
+ENV GOPATH="/go"
+ENV DUBUG="true"
 
-EXPOSE 8080
+RUN mkdir $GOPATH/src/2FAServer 
+WORKDIR $GOPATH/src/2FAServer
+ADD . .
 
-CMD ["run"]
+RUN go get -v ./... 
+
+RUN go install 
+
+EXPOSE 1323
+
+CMD ["2FAServer"]
