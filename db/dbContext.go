@@ -15,7 +15,7 @@ type dbContext struct {
 }
 
 // NewDbContext DbContext constructor.
-func NewDbContext() *dbContext {
+func NewDbContext() DbContextInterface {
 	dbc := new(dbContext)
 	dbc.connection = initializeDb()
 
@@ -28,7 +28,7 @@ func NewDbContext() *dbContext {
 		log.Printf("%s %s", time.Since(event.StartTime), query)
 	})
 
-	// err := dbc.createSchema()
+	// err := dbc.CreateSchema()
 	// if err != nil {
 	// 	panic(err)
 	// }
@@ -36,6 +36,7 @@ func NewDbContext() *dbContext {
 	return dbc
 }
 
+// Private functions.
 func initializeDb() *pg.DB {
 	user := os.Getenv("PG_USERNAME")
 	password := os.Getenv("PG_PASSWORD")
@@ -48,7 +49,8 @@ func initializeDb() *pg.DB {
 	})
 }
 
-func (dbc dbContext) createSchema() error {
+// Public Interface methods.
+func (dbc *dbContext) CreateSchema() error {
 	for _, model := range []interface{}{&models.Key{}} {
 		err := dbc.connection.CreateTable(model, nil)
 		if err != nil {
@@ -58,7 +60,7 @@ func (dbc dbContext) createSchema() error {
 	return nil
 }
 
-func (dbc dbContext) GetModel(keyID string) models.Key {
+func (dbc *dbContext) GetModel(keyID int) models.Key {
 	aKey := models.Key{KeyID: keyID}
 	err := dbc.connection.Select(&aKey)
 	if err != nil && err != pg.ErrNoRows {
@@ -73,7 +75,7 @@ func (dbc dbContext) GetModel(keyID string) models.Key {
 	return aKey
 }
 
-func (dbc dbContext) GetModels(userID string) []models.Key {
+func (dbc *dbContext) GetModels(userID string) []models.Key {
 	var res []models.Key
 	err := dbc.connection.Model(&models.Key{}).Where("user_id = ?", userID).Select(&res)
 	if err != nil && err != pg.ErrNoRows {
@@ -88,17 +90,17 @@ func (dbc dbContext) GetModels(userID string) []models.Key {
 	return res
 }
 
-func (dbc dbContext) InsertModel(m models.Key) bool {
+func (dbc *dbContext) InsertModel(m models.Key) models.Key {
 	err := dbc.connection.Insert(&m)
 	if err != nil {
 		// TODO: Log the error.
-		return false
+		return models.Key{}
 	}
 
-	return true
+	return m
 }
 
-func (dbc dbContext) UpdateModel(keyID, key string) bool {
+func (dbc *dbContext) UpdateModel(keyID int, key string) bool {
 	aKey := models.Key{
 		KeyID: keyID,
 		Key:   key,
@@ -115,7 +117,7 @@ func (dbc dbContext) UpdateModel(keyID, key string) bool {
 	return true
 }
 
-func (dbc dbContext) DeleteModel(m models.Key) bool {
+func (dbc *dbContext) DeleteModel(m models.Key) bool {
 	err := dbc.connection.Delete(&m)
 	if err != nil {
 		// TODO: Log the error.

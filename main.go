@@ -2,6 +2,7 @@ package main
 
 import (
 	"2FAServer/configuration"
+	"2FAServer/db"
 	"2FAServer/handler"
 
 	"github.com/labstack/echo"
@@ -9,7 +10,7 @@ import (
 
 func main() {
 	server := echo.New()
-	handler := new(handler.KeyHandler)
+	handler := handler.KeyHandler{DbContext: db.NewDbContext()}
 
 	server.POST(configuration.APIPath, handler.CreateKey)
 	server.GET(configuration.APIPath, handler.GetKeys)
