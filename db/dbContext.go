@@ -10,6 +10,16 @@ import (
 	"github.com/go-pg/pg"
 )
 
+// DbContextInterface for DB access.
+type DbContextInterface interface {
+	CreateSchema() error
+	GetKeyByID(keyID int) models.Key
+	GetKeysByUserID(userID string) []models.Key
+	InsertKey(m models.Key) models.Key
+	UpdateKey(keyID int, key string) bool
+	DeleteKey(m models.Key) bool
+}
+
 type dbContext struct {
 	connection *pg.DB
 }
@@ -28,11 +38,6 @@ func NewDbContext() DbContextInterface {
 		log.Printf("%s %s", time.Since(event.StartTime), query)
 	})
 
-	// err := dbc.CreateSchema()
-	// if err != nil {
-	// 	panic(err)
-	// }
-
 	return dbc
 }
 
@@ -49,7 +54,7 @@ func initializeDb() *pg.DB {
 	})
 }
 
-// Public Interface methods.
+// CreateSchema defines a new of tables based on models.Key struct.
 func (dbc *dbContext) CreateSchema() error {
 	for _, model := range []interface{}{&models.Key{}} {
 		err := dbc.connection.CreateTable(model, nil)
@@ -60,7 +65,8 @@ func (dbc *dbContext) CreateSchema() error {
 	return nil
 }
 
-func (dbc *dbContext) GetModel(keyID int) models.Key {
+// GetKeyByID retrieves a model by KeyID
+func (dbc *dbContext) GetKeyByID(keyID int) models.Key {
 	aKey := models.Key{KeyID: keyID}
 	err := dbc.connection.Select(&aKey)
 	if err != nil && err != pg.ErrNoRows {
@@ -75,7 +81,8 @@ func (dbc *dbContext) GetModel(keyID int) models.Key {
 	return aKey
 }
 
-func (dbc *dbContext) GetModels(userID string) []models.Key {
+// GetKeysByUserID retrieves a list of Keys by UserID
+func (dbc *dbContext) GetKeysByUserID(userID string) []models.Key {
 	var res []models.Key
 	err := dbc.connection.Model(&models.Key{}).Where("user_id = ?", userID).Select(&res)
 	if err != nil && err != pg.ErrNoRows {
@@ -90,7 +97,8 @@ func (dbc *dbContext) GetModels(userID string) []models.Key {
 	return res
 }
 
-func (dbc *dbContext) InsertModel(m models.Key) models.Key {
+// InsertKey creates a new Key record in the database.
+func (dbc *dbContext) InsertKey(m models.Key) models.Key {
 	err := dbc.connection.Insert(&m)
 	if err != nil {
 		// TODO: Log the error.
@@ -100,7 +108,8 @@ func (dbc *dbContext) InsertModel(m models.Key) models.Key {
 	return m
 }
 
-func (dbc *dbContext) UpdateModel(keyID int, key string) bool {
+// UpdateKey updates a Key records's key value.
+func (dbc *dbContext) UpdateKey(keyID int, key string) bool {
 	aKey := models.Key{
 		KeyID: keyID,
 		Key:   key,
@@ -117,7 +126,8 @@ func (dbc *dbContext) UpdateModel(keyID int, key string) bool {
 	return true
 }
 
-func (dbc *dbContext) DeleteModel(m models.Key) bool {
+// DeleteKey removes a Key record from the database.
+func (dbc *dbContext) DeleteKey(m models.Key) bool {
 	err := dbc.connection.Delete(&m)
 	if err != nil {
 		// TODO: Log the error.
