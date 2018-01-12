@@ -16,11 +16,11 @@ import (
 // DbContextInterface for DB access.
 type ContextInterface interface {
 	CreateSchema() error
-	GetModel(model models.Persistable) interface{}
-	GetWithWhere(model models.Persistable, whereClause string, params ...interface{}) []interface{}
-	InsertModel(model models.Persistable) int64
-	UpdateModel(model models.Persistable) bool
-	DeleteModel(model models.Persistable) bool
+	GetModel(model interface{}) interface{}
+	GetWithWhere(model interface{}, whereClause string, params ...interface{}) []interface{}
+	InsertModel(model interface{}) interface{}
+	UpdateModel(model interface{}) bool
+	DeleteModel(model interface{}) bool
 }
 
 type DbContext struct {
@@ -89,7 +89,7 @@ func (dbc *DbContext) CreateSchema() error {
 	return nil
 }
 
-func (dbc *DbContext) GetModel(model models.Persistable) interface{} {
+func (dbc *DbContext) GetModel(model interface{}) interface{} {
 	err := dbc.connection.Select(&model)
 	if err != nil && err != pg.ErrNoRows {
 		// TODO: Log the error. Panic for now.
@@ -103,7 +103,7 @@ func (dbc *DbContext) GetModel(model models.Persistable) interface{} {
 	return model
 }
 
-func (dbc *DbContext) GetWithWhere(model models.Persistable, whereClause string, params ...interface{}) []interface{} {
+func (dbc *DbContext) GetWithWhere(model interface{}, whereClause string, params ...interface{}) []interface{} {
 	var res []interface{}
 	err := dbc.connection.Model(&model).Where(whereClause, params).Select(&res)
 	if err != nil && err != pg.ErrNoRows {
@@ -114,18 +114,18 @@ func (dbc *DbContext) GetWithWhere(model models.Persistable, whereClause string,
 	return res
 }
 
-func (dbc *DbContext) InsertModel(model models.Persistable) int64 {
+func (dbc *DbContext) InsertModel(model interface{}) interface{} {
 	err := dbc.connection.Insert(&model)
 	if err != nil {
 		// TODO: Log the error.
 		return 0
 	}
 
-	return model.ObjectID()
+	return model
 }
 
-func (dbc *DbContext) UpdateModel(model models.Persistable) bool {
-	_, err := dbc.connection.Model(&model).Column(model.CollectionName()).Update()
+func (dbc *DbContext) UpdateModel(model interface{}) bool {
+	err := dbc.connection.Update(&model)
 	if err != nil {
 		// TODO: Log the error.
 		return false
@@ -134,7 +134,7 @@ func (dbc *DbContext) UpdateModel(model models.Persistable) bool {
 	return true
 }
 
-func (dbc *DbContext) DeleteModel(model models.Persistable) bool {
+func (dbc *DbContext) DeleteModel(model interface{}) bool {
 	err := dbc.connection.Delete(&model)
 	if err != nil {
 		// TODO: Log the error.
