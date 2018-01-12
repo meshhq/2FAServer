@@ -10,12 +10,13 @@ import (
 
 func main() {
 	server := echo.New()
-	handler := handler.KeyHandler{DbContext: db.NewDbContext()}
+	database := db.NewDbContext()
+	keyHandler := handler.NewKeyHandler(&database)
 
-	server.POST(configuration.APIPath, handler.CreateKey)
-	server.GET(configuration.APIPath, handler.GetKeys)
-	server.PUT(configuration.APIPath+"/:key_id", handler.UpdateKey)
-	server.DELETE(configuration.APIPath+"/:key_id", handler.DeleteKey)
+	server.POST(configuration.APIPath, keyHandler.CreateKey)
+	server.GET(configuration.APIPath, keyHandler.GetKeys)
+	server.PUT(configuration.APIPath+"/:key_id", keyHandler.UpdateKey)
+	server.DELETE(configuration.APIPath+"/:key_id", keyHandler.DeleteKey)
 
 	server.Logger.Fatal(server.Start(":1323"))
 }

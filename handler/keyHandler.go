@@ -7,13 +7,23 @@ import (
 	"2FAServer/configuration"
 	"2FAServer/db"
 	"2FAServer/models"
+	"2FAServer/store"
 
 	"github.com/labstack/echo"
 )
 
 // KeyHandler Key Route handlers.
 type KeyHandler struct {
-	DbContext db.DbContextInterface
+	store store.KeyStore
+}
+
+func NewKeyHandler(database *db.ContextInterface) *KeyHandler {
+	keyHandler := new(KeyHandler)
+
+	store := store.NewKeyStore(database)
+	keyHandler.store = *store
+
+	return keyHandler
 }
 
 // CreateKey Creates new Key record.
@@ -24,7 +34,7 @@ func (h *KeyHandler) CreateKey(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, e)
 	}
 
-	nk := h.DbContext.InsertKey(*rk)
+	nk := h.store.InsertKey(*rk)
 	if nk.KeyID == 0 {
 		e := models.NewJSONResponse(nil, configuration.Success)
 		return c.JSON(http.StatusBadRequest, e)
@@ -41,13 +51,13 @@ func (h *KeyHandler) GetKeys(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	keys := h.DbContext.GetKeysByUserID(userID)
+	keys := h.store.KeysByUserID(userID)
 	return c.JSON(http.StatusOK, models.NewJSONResponse(keys, configuration.Success))
 }
 
 // UpdateKey Updates existing key by key_id
 func (h *KeyHandler) UpdateKey(c echo.Context) (err error) {
-	keyID, err := strconv.Atoi(c.Param("key_id"))
+	keyID, err := strconv.ParseInt(c.Param("key_id"), 0, 0)
 	if err != nil {
 		e := models.NewJSONResponse(nil, configuration.KeyIDMissing)
 		return c.JSON(http.StatusBadRequest, e)
@@ -60,13 +70,13 @@ func (h *KeyHandler) UpdateKey(c echo.Context) (err error) {
 	}
 
 	// Search for key in db.
-	existingKey := h.DbContext.GetKeyByID(keyID)
+	existingKey := h.store.KeyByID(keyID)
 	if existingKey.KeyID == 0 {
 		return c.JSON(http.StatusBadRequest, models.NewJSONResponse(nil, configuration.ElementMissing))
 	}
 
 	// Modify key property
-	updated := h.DbContext.UpdateKey(keyID, payload.Key)
+	updated := h.store.UpdateKey(keyID, payload.Key)
 	if !updated {
 		return c.JSON(http.StatusBadRequest, models.NewJSONResponse(nil, configuration.UpdateKeyError))
 	}
@@ -76,13 +86,13 @@ func (h *KeyHandler) UpdateKey(c echo.Context) (err error) {
 
 // DeleteKey Deletes existing key by Key_id
 func (h *KeyHandler) DeleteKey(c echo.Context) error {
-	keyID, err := strconv.Atoi(c.Param("key_id"))
+	keyID, err := strconv.ParseInt(c.Param("key_id"), 0, 0)
 	if err != nil {
 		e := models.NewJSONResponse(nil, configuration.InvalidRequestPayload)
 		return c.JSON(http.StatusBadRequest, e)
 	}
 
-	removed := h.DbContext.DeleteKey(models.Key{KeyID: keyID})
+	removed := h.store.DeleteKey(models.Key{KeyID: keyID})
 	if !removed {
 		return c.JSON(http.StatusBadRequest, models.NewJSONResponse(nil, configuration.DeleteError))
 	}

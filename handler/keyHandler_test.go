@@ -20,8 +20,9 @@ import (
 )
 
 var (
-	h       = handler.KeyHandler{DbContext: new(db.MockDbContext)}
-	testKey = models.Key{
+	database db.ContextInterface = new(db.MockDbContext)
+	h                            = handler.NewKeyHandler(&database)
+	testKey                      = models.Key{
 		KeyID:    1,
 		UserID:   fake.UserName(),
 		Key:      fake.Password(10, 20, true, true, true),
@@ -92,7 +93,7 @@ func TestUpdateKey(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetPath(configuration.APIPath + "/:key_id")
 	c.SetParamNames("key_id")
-	c.SetParamValues(strconv.Itoa(testKey.KeyID))
+	c.SetParamValues(strconv.Itoa(int(testKey.KeyID)))
 
 	// Assertions
 	if assert.NoError(t, h.UpdateKey(c)) {
@@ -114,7 +115,7 @@ func TestDeleteKey(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetPath(configuration.APIPath + "/:key_id")
 	c.SetParamNames("key_id")
-	c.SetParamValues(strconv.Itoa(testKey.KeyID))
+	c.SetParamValues(strconv.Itoa(int(testKey.KeyID)))
 
 	// Assertions
 	if assert.NoError(t, h.DeleteKey(c)) {

@@ -14,22 +14,22 @@ import (
 )
 
 // DbContextInterface for DB access.
-type DbContextInterface interface {
+type ContextInterface interface {
 	CreateSchema() error
-	GetKeyByID(keyID int) models.Key
-	GetKeysByUserID(userID string) []models.Key
-	InsertKey(m models.Key) models.Key
-	UpdateKey(keyID int, key string) bool
-	DeleteKey(m models.Key) bool
+	GetModel(model models.Persistable) interface{}
+	GetWithWhere(model models.Persistable, whereClause string, params ...interface{}) []interface{}
+	InsertModel(model models.Persistable) int64
+	UpdateModel(model models.Persistable) bool
+	DeleteModel(model models.Persistable) bool
 }
 
-type dbContext struct {
+type DbContext struct {
 	connection *pg.DB
 }
 
 // NewDbContext DbContext constructor.
-func NewDbContext() DbContextInterface {
-	dbc := new(dbContext)
+func NewDbContext() ContextInterface {
+	dbc := new(DbContext)
 	dbc.connection = initializeDb()
 
 	isDebug, err := strconv.ParseBool(os.Getenv("DEBUG"))
@@ -77,7 +77,7 @@ func initializeDb() *pg.DB {
 }
 
 // CreateSchema defines a new of tables based on models.Key struct.
-func (dbc *dbContext) CreateSchema() error {
+func (dbc *DbContext) CreateSchema() error {
 	for _, model := range []interface{}{&models.Key{}} {
 		err := dbc.connection.CreateTable(model, &orm.CreateTableOptions{
 			IfNotExists: true,
@@ -89,70 +89,53 @@ func (dbc *dbContext) CreateSchema() error {
 	return nil
 }
 
-// GetKeyByID retrieves a model by KeyID
-func (dbc *dbContext) GetKeyByID(keyID int) models.Key {
-	aKey := models.Key{KeyID: keyID}
-	err := dbc.connection.Select(&aKey)
+func (dbc *DbContext) GetModel(model models.Persistable) interface{} {
+	err := dbc.connection.Select(&model)
 	if err != nil && err != pg.ErrNoRows {
 		// TODO: Log the error. Panic for now.
 		panic(err)
 	}
 
 	if err == pg.ErrNoRows {
-		return models.Key{}
+		return nil
 	}
 
-	return aKey
+	return model
 }
 
-// GetKeysByUserID retrieves a list of Keys by UserID
-func (dbc *dbContext) GetKeysByUserID(userID string) []models.Key {
-	var res []models.Key
-	err := dbc.connection.Model(&models.Key{}).Where("user_id = ?", userID).Select(&res)
+func (dbc *DbContext) GetWithWhere(model models.Persistable, whereClause string, params ...interface{}) []interface{} {
+	var res []interface{}
+	err := dbc.connection.Model(&model).Where(whereClause, params).Select(&res)
 	if err != nil && err != pg.ErrNoRows {
 		// TODO: Log the error. Panic for now.
 		panic(err)
 	}
 
-	if res == nil {
-		res = []models.Key{}
-	}
-
 	return res
 }
 
-// InsertKey creates a new Key record in the database.
-func (dbc *dbContext) InsertKey(m models.Key) models.Key {
-	err := dbc.connection.Insert(&m)
+func (dbc *DbContext) InsertModel(model models.Persistable) int64 {
+	err := dbc.connection.Insert(&model)
 	if err != nil {
 		// TODO: Log the error.
-		return models.Key{}
+		return 0
 	}
 
-	return m
+	return model.ObjectID()
 }
 
-// UpdateKey updates a Key records's key value.
-func (dbc *dbContext) UpdateKey(keyID int, key string) bool {
-	aKey := models.Key{
-		KeyID: keyID,
-		Key:   key,
-	}
-
-	res, err := dbc.connection.Model(&aKey).Column("key").Update()
+func (dbc *DbContext) UpdateModel(model models.Persistable) bool {
+	_, err := dbc.connection.Model(&model).Column(model.CollectionName()).Update()
 	if err != nil {
 		// TODO: Log the error.
 		return false
 	}
 
-	fmt.Println(res)
-
 	return true
 }
 
-// DeleteKey removes a Key record from the database.
-func (dbc *dbContext) DeleteKey(m models.Key) bool {
-	err := dbc.connection.Delete(&m)
+func (dbc *DbContext) DeleteModel(model models.Persistable) bool {
+	err := dbc.connection.Delete(&model)
 	if err != nil {
 		// TODO: Log the error.
 		return false

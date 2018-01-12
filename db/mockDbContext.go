@@ -14,33 +14,40 @@ func (dbc *MockDbContext) CreateSchema() error {
 }
 
 // GetKeyByID retrieves a model by KeyID
-func (dbc *MockDbContext) GetKeyByID(keyID int) models.Key {
-	return models.Key{KeyID: keyID}
+func (dbc *MockDbContext) GetModel(model models.Persistable) interface{} {
+	return model.ObjectID()
 }
 
 // GetKeysByUserID retrieves a list of Keys by UserID
-func (dbc *MockDbContext) GetKeysByUserID(userID string) []models.Key {
-	return []models.Key{
-		models.Key{KeyID: 1},
-		models.Key{KeyID: 2},
-		models.Key{KeyID: 3},
-		models.Key{KeyID: 4},
-		models.Key{KeyID: 5},
+func (dbc *MockDbContext) GetWithWhere(model models.Persistable, whereClause string, params ...interface{}) []interface{} {
+	var arr []interface{}
+	intList := [5]models.Persistable{
+		models.Key{},
+		models.Key{},
+		models.Key{},
+		models.Key{},
+		models.Key{},
 	}
+
+	for _, val := range intList {
+		arr = append(arr, val)
+	}
+
+	return arr
 }
 
 // InsertKey creates a new Key record in the database.
-func (dbc *MockDbContext) InsertKey(m models.Key) models.Key {
-	if m.KeyID > 5 {
-		return models.Key{}
+func (dbc *MockDbContext) InsertModel(model models.Persistable) int64 {
+	if model.ObjectID() > 5 {
+		return 0
 	}
 
-	return m
+	return model.ObjectID()
 }
 
 // UpdateKey updates a Key records's key value.
-func (dbc *MockDbContext) UpdateKey(keyID int, key string) bool {
-	if keyID < 5 {
+func (dbc *MockDbContext) UpdateModel(model models.Persistable) bool {
+	if model.ObjectID() < 5 {
 		return true
 	}
 
@@ -48,8 +55,8 @@ func (dbc *MockDbContext) UpdateKey(keyID int, key string) bool {
 }
 
 // DeleteKey removes a Key record from the database.
-func (dbc *MockDbContext) DeleteKey(m models.Key) bool {
-	if m.KeyID < 5 {
+func (dbc *MockDbContext) DeleteModel(model models.Persistable) bool {
+	if model.ObjectID() < 5 {
 		return true
 	}
 
