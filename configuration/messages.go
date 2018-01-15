@@ -23,3 +23,6 @@ const UpdateKeyError = "Could not update key."
 
 // CreateKeyError string literal.
 const CreateKeyError = "Could not create key."
+
+// OTPValidationFailed string literal.
+const OTPValidationFailed = "Token validation failed."
