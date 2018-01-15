@@ -2,75 +2,97 @@ package handler
 
 import (
 	"net/http"
-	"time"
+	"strconv"
 
+	"2FAServer/configuration"
+	"2FAServer/db"
 	"2FAServer/models"
+	"2FAServer/store"
 
 	"github.com/labstack/echo"
 )
 
+// KeyHandler Key Route handlers.
 type KeyHandler struct {
+	store store.KeyStore
 }
 
-// Create new key
-func (h *KeyHandler) CreateKey(c echo.Context) (err error) {
-	nk := new(models.Key)
+func NewKeyHandler(database *db.ContextInterface) *KeyHandler {
+	keyHandler := new(KeyHandler)
 
-	if err = c.Bind(nk); err != nil {
-		response := models.JSONResponse{Message: "Invalid request payload\n", TimeStamp: time.Now().Unix()}
-		return c.JSON(http.StatusBadRequest, response)
+	store := store.NewKeyStore(database)
+	keyHandler.store = *store
+
+	return keyHandler
+}
+
+// CreateKey Creates new Key record.
+func (h *KeyHandler) CreateKey(c echo.Context) (err error) {
+	rk := new(models.Key)
+	if err = c.Bind(rk); err != nil {
+		e := models.NewJSONResponse(nil, configuration.InvalidRequestPayload)
+		return c.JSON(http.StatusBadRequest, e)
 	}
 
-	// Search for key in db.
-	// if it doesnt exist, create.
+	nk := h.store.InsertKey(rk)
+	if nk.ID == 0 {
+		e := models.NewJSONResponse(nil, configuration.Success)
+		return c.JSON(http.StatusBadRequest, e)
+	}
 
-	// Return new value.
-	response := models.JSONResponse{Message: nk.Key + nk.Provider + nk.UserID, TimeStamp: time.Now().Unix()}
-	return c.JSON(http.StatusCreated, response)
+	return c.JSON(http.StatusOK, models.NewJSONResponse(nk, configuration.Success))
 }
 
-// Retrieve all keys in storage
-func (h *KeyHandler) GetKeys(c echo.Context) error {
+// GetKeys Retrieve all keys in storage by user_id
+func (h *KeyHandler) GetKeys(c echo.Context) (err error) {
 	var userID = c.QueryParam("user_id")
-
 	if userID == "" {
-		err := models.JSONResponse{Message: "'user_id' is missing.", TimeStamp: time.Now().Unix()}
+		err := models.NewJSONResponse(nil, configuration.UserIDMissing)
 		return c.JSON(http.StatusBadRequest, err)
 	}
 
-	// Fetch keys from Db
-	keys := [5]string{
-		"bdfajfsnkjav",
-		"bdfajfsnkjav",
-		"bdfajfsnkjav",
-		"bdfajfsnkjav",
-		"bdfajfsnkjav"}
-
-	return c.JSON(http.StatusOK, keys)
+	keys := h.store.KeysByUserID(userID)
+	return c.JSON(http.StatusOK, models.NewJSONResponse(keys, configuration.Success))
 }
 
-// Update existing key by key_id
-func (h *KeyHandler) UpdateKey(c echo.Context) error {
-	keyID := c.Param("key_id")
+// UpdateKey Updates existing key by key_id
+func (h *KeyHandler) UpdateKey(c echo.Context) (err error) {
+	keyID, err := strconv.ParseInt(c.Param("key_id"), 0, 0)
+	if err != nil {
+		e := models.NewJSONResponse(nil, configuration.KeyIDMissing)
+		return c.JSON(http.StatusBadRequest, e)
+	}
 
-	// Search for key in db.
-	// if it doesnt exist, do nothing
+	payload := new(models.Key)
+	if err = c.Bind(payload); err != nil {
+		e := models.NewJSONResponse(nil, configuration.InvalidRequestPayload)
+		return c.JSON(http.StatusBadRequest, e)
+	}
 
 	// Modify key property
+	updated := h.store.UpdateKey(keyID, payload.Key)
+	if !updated {
+		return c.JSON(http.StatusBadRequest, models.NewJSONResponse(nil, configuration.UpdateKeyError))
+	}
 
-	response := models.JSONResponse{Message: keyID, TimeStamp: time.Now().Unix()}
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, models.NewJSONResponse(nil, configuration.Success))
 }
 
-// Delete existing key by key_id
+// DeleteKey Deletes existing key by Key_id
 func (h *KeyHandler) DeleteKey(c echo.Context) error {
-	keyID := c.Param("key_id")
+	keyID, err := strconv.ParseInt(c.Param("key_id"), 0, 0)
+	if err != nil {
+		e := models.NewJSONResponse(nil, configuration.InvalidRequestPayload)
+		return c.JSON(http.StatusBadRequest, e)
+	}
 
-	// Search for key in db.
-	// if it doesnt exist, do nothing
+	aKey := new(models.Key)
+	aKey.ID = keyID
 
-	// Remove entry
+	removed := h.store.DeleteKey(*aKey)
+	if !removed {
+		return c.JSON(http.StatusBadRequest, models.NewJSONResponse(nil, configuration.DeleteError))
+	}
 
-	response := models.JSONResponse{Message: keyID, TimeStamp: time.Now().Unix()}
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, models.NewJSONResponse(nil, configuration.Success))
 }

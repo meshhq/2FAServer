@@ -2,6 +2,7 @@ package main
 
 import (
 	"2FAServer/configuration"
+	"2FAServer/db"
 	"2FAServer/handler"
 	"html/template"
 
@@ -10,7 +11,9 @@ import (
 
 func main() {
 	server := echo.New()
-	keyHandler := new(handler.KeyHandler)
+
+	database := db.NewDbContext()
+	keyHandler := handler.NewKeyHandler(&database)
 
 	server.POST(configuration.APIPath, keyHandler.CreateKey)
 	server.GET(configuration.APIPath, keyHandler.GetKeys)
