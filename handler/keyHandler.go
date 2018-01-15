@@ -35,7 +35,7 @@ func (h *KeyHandler) CreateKey(c echo.Context) (err error) {
 	}
 
 	nk := h.store.InsertKey(*rk)
-	if nk.KeyID == 0 {
+	if nk.ID == 0 {
 		e := models.NewJSONResponse(nil, configuration.Success)
 		return c.JSON(http.StatusBadRequest, e)
 	}
@@ -69,12 +69,6 @@ func (h *KeyHandler) UpdateKey(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, e)
 	}
 
-	// Search for key in db.
-	existingKey := h.store.KeyByID(keyID)
-	if existingKey.KeyID == 0 {
-		return c.JSON(http.StatusBadRequest, models.NewJSONResponse(nil, configuration.ElementMissing))
-	}
-
 	// Modify key property
 	updated := h.store.UpdateKey(keyID, payload.Key)
 	if !updated {
@@ -92,7 +86,10 @@ func (h *KeyHandler) DeleteKey(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, e)
 	}
 
-	removed := h.store.DeleteKey(models.Key{KeyID: keyID})
+	aKey := new(models.Key)
+	aKey.ID = keyID
+
+	removed := h.store.DeleteKey(*aKey)
 	if !removed {
 		return c.JSON(http.StatusBadRequest, models.NewJSONResponse(nil, configuration.DeleteError))
 	}

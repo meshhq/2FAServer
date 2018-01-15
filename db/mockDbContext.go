@@ -2,7 +2,6 @@ package db
 
 import (
 	"2FAServer/models"
-	"fmt"
 	"reflect"
 )
 
@@ -15,57 +14,51 @@ func (dbc *MockDbContext) CreateSchema() error {
 	return nil
 }
 
-// GetKeyByID retrieves a model by KeyID
-func (dbc *MockDbContext) GetModel(model interface{}) interface{} {
+// GetModel retrieves a model by PK.
+func (dbc *MockDbContext) GetModel(model models.Persistable) models.Persistable {
 	return model
 }
 
-// GetKeysByUserID retrieves a list of Keys by UserID
-func (dbc *MockDbContext) GetWithWhere(model interface{}, whereClause string, params ...interface{}) []interface{} {
-	var arr []interface{}
-	intList := [5]models.Persistable{
-		models.Key{},
-		models.Key{},
-		models.Key{},
-		models.Key{},
-		models.Key{},
-	}
-
-	for _, val := range intList {
-		arr = append(arr, val)
+// GetWithWhere retrieves a list of Models and filters by a where clause.
+func (dbc *MockDbContext) GetWithWhere(model models.Persistable, whereClause string, params ...interface{}) []models.Persistable {
+	arr := []models.Persistable{
+		&models.Model{ID: 1},
+		&models.Model{ID: 2},
+		&models.Model{ID: 3},
+		&models.Model{ID: 4},
+		&models.Model{ID: 5},
 	}
 
 	return arr
 }
 
-// InsertKey creates a new Key record in the database.
-func (dbc *MockDbContext) InsertModel(model interface{}) interface{} {
-	// pointer to struct - addressable
-	ps := reflect.ValueOf(&model)
-	// struct
-	s := ps.Elem()
-	if s.Kind() == reflect.Struct {
-		// exported field
-		f := s.FieldByName("KeyID")
-		if f.IsValid() && f.CanSet() {
-			// A Value can be changed only if it is
-			// addressable and was not obtained by
-			// the use of unexported struct fields.
+// InsertModel creates a new Key record in the database.
+func (dbc *MockDbContext) InsertModel(model models.Persistable) models.Persistable {
+	s := reflect.ValueOf(&model).Elem()
+	if s.Kind() != reflect.Struct {
+		return model
+	}
 
-			// change value of model.KeyID
-			if f.Kind() == reflect.Int {
-				x := int64(7)
-				if !f.OverflowInt(x) {
-					f.SetInt(x)
-				}
+	f := s.FieldByName("ID")
+	if f.IsValid() && f.CanSet() {
+		// A Value can be changed only if it is
+		// addressable and was not obtained by
+		// the use of unexported struct fields.
+
+		if f.Kind() == reflect.Int {
+			x := int64(7)
+			if !f.OverflowInt(x) {
+				f.SetInt(x)
 			}
-
 		}
+
 	}
 
-	// N at end
-	fmt.Println(model)
+	return model
+}
 
+// UpdateModel updates a Key records's key value.
+func (dbc *MockDbContext) UpdateModel(model models.Persistable) bool {
 	method := reflect.ValueOf(model).MethodByName("ObjectID")
 	in := make([]reflect.Value, method.Type().NumIn())
 
@@ -79,23 +72,8 @@ func (dbc *MockDbContext) InsertModel(model interface{}) interface{} {
 	return false
 }
 
-// UpdateKey updates a Key records's key value.
-func (dbc *MockDbContext) UpdateModel(model interface{}) bool {
-	method := reflect.ValueOf(model).MethodByName("ObjectID")
-	in := make([]reflect.Value, method.Type().NumIn())
-
-	res := method.Call(in)
-	id := res[0].Interface().(int64)
-
-	if id < 5 {
-		return true
-	}
-
-	return false
-}
-
-// DeleteKey removes a Key record from the database.
-func (dbc *MockDbContext) DeleteModel(model interface{}) bool {
+// DeleteModel removes a Key record from the database.
+func (dbc *MockDbContext) DeleteModel(model models.Persistable) bool {
 	method := reflect.ValueOf(model).MethodByName("ObjectID")
 	in := make([]reflect.Value, method.Type().NumIn())
 

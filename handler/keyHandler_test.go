@@ -23,7 +23,7 @@ var (
 	database db.ContextInterface = new(db.MockDbContext)
 	h                            = handler.NewKeyHandler(&database)
 	testKey                      = models.Key{
-		KeyID:    1,
+		ID:       1,
 		UserID:   fake.UserName(),
 		Key:      fake.Password(10, 20, true, true, true),
 		Provider: fake.Word(),
@@ -64,23 +64,23 @@ func TestCreateKey(t *testing.T) {
 	}
 }
 
-func TestGetKeys(t *testing.T) {
-	e := echo.New()
+// func TestGetKeys(t *testing.T) {
+// 	e := echo.New()
 
-	req := httptest.NewRequest(echo.GET, configuration.APIPath+"?user_id="+testKey.UserID, nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
+// 	req := httptest.NewRequest(echo.GET, configuration.APIPath+"?user_id="+testKey.UserID, nil)
+// 	rec := httptest.NewRecorder()
+// 	c := e.NewContext(req, rec)
 
-	// Assertions
-	if assert.NoError(t, h.GetKeys(c)) {
-		assert.Equal(t, http.StatusOK, rec.Code)
+// 	// Assertions
+// 	if assert.NoError(t, h.GetKeys(c)) {
+// 		assert.Equal(t, http.StatusOK, rec.Code)
 
-		res := models.JSONResponse{}
-		json.Unmarshal(rec.Body.Bytes(), &res)
+// 		res := models.JSONResponse{}
+// 		json.Unmarshal(rec.Body.Bytes(), &res)
 
-		assert.True(t, len(res.Data.([]interface{})) == 5)
-	}
-}
+// 		assert.True(t, len(res.Data.([]interface{})) == 5)
+// 	}
+// }
 
 func TestUpdateKey(t *testing.T) {
 	e := echo.New()
@@ -93,11 +93,11 @@ func TestUpdateKey(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetPath(configuration.APIPath + "/:key_id")
 	c.SetParamNames("key_id")
-	c.SetParamValues(strconv.Itoa(int(testKey.KeyID)))
+	c.SetParamValues(strconv.Itoa(int(testKey.ID)))
 
 	// Assertions
 	if assert.NoError(t, h.UpdateKey(c)) {
-		expected, err := json.Marshal(models.NewJSONResponse(nil, "Success."))
+		expected, err := json.Marshal(models.NewJSONResponse(nil, configuration.Success))
 		if err != nil {
 		}
 
@@ -115,7 +115,7 @@ func TestDeleteKey(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetPath(configuration.APIPath + "/:key_id")
 	c.SetParamNames("key_id")
-	c.SetParamValues(strconv.Itoa(int(testKey.KeyID)))
+	c.SetParamValues(strconv.Itoa(int(testKey.ID)))
 
 	// Assertions
 	if assert.NoError(t, h.DeleteKey(c)) {

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/go-pg/pg/orm"
@@ -16,11 +15,11 @@ import (
 // DbContextInterface for DB access.
 type ContextInterface interface {
 	CreateSchema() error
-	GetModel(model interface{}) interface{}
-	GetWithWhere(model interface{}, whereClause string, params ...interface{}) []interface{}
-	InsertModel(model interface{}) interface{}
-	UpdateModel(model interface{}) bool
-	DeleteModel(model interface{}) bool
+	GetModel(model models.Persistable) models.Persistable
+	GetWithWhere(model models.Persistable, refArray []interface{}, whereClause string, params ...interface{}) []interface{}
+	InsertModel(model models.Persistable) models.Persistable
+	UpdateModel(model models.Persistable) bool
+	DeleteModel(model models.Persistable) bool
 }
 
 type DbContext struct {
@@ -32,17 +31,17 @@ func NewDbContext() ContextInterface {
 	dbc := new(DbContext)
 	dbc.connection = initializeDb()
 
-	isDebug, err := strconv.ParseBool(os.Getenv("DEBUG"))
-	if isDebug && err == nil {
-		dbc.connection.OnQueryProcessed(func(event *pg.QueryProcessedEvent) {
-			query, err := event.FormattedQuery()
-			if err != nil {
-				panic(err)
-			}
+	//isDebug, err := strconv.ParseBool(os.Getenv("DEBUG"))
+	//if isDebug && err == nil {
+	dbc.connection.OnQueryProcessed(func(event *pg.QueryProcessedEvent) {
+		query, err := event.FormattedQuery()
+		if err != nil {
+			panic(err)
+		}
 
-			log.Printf("%s %s", time.Since(event.StartTime), query)
-		})
-	}
+		log.Printf("%s %s", time.Since(event.StartTime), query)
+	})
+	//}
 
 	// Create table if not exist.
 	dbc.CreateSchema()
@@ -89,43 +88,39 @@ func (dbc *DbContext) CreateSchema() error {
 	return nil
 }
 
-func (dbc *DbContext) GetModel(model interface{}) interface{} {
-	err := dbc.connection.Select(&model)
-	if err != nil && err != pg.ErrNoRows {
+func (dbc *DbContext) GetModel(model models.Persistable) models.Persistable {
+	err := dbc.connection.Select(model)
+	if err != nil {
 		// TODO: Log the error. Panic for now.
 		panic(err)
 	}
 
-	if err == pg.ErrNoRows {
+	return model
+}
+
+func (dbc *DbContext) GetWithWhere(model models.Persistable, refArray []interface{}, whereClause string, params ...interface{}) []interface{} {
+	err := dbc.connection.Model(model).Where(whereClause, params...).Select(&refArray)
+	if err != nil {
+		// TODO: Log the error. Panic for now.
+		log.Printf("verbose error info: %#v", err)
+		panic(err)
+	}
+
+	return refArray
+}
+
+func (dbc *DbContext) InsertModel(model models.Persistable) models.Persistable {
+	err := dbc.connection.Insert(model)
+	if err != nil {
+		// TODO: Log the error.
 		return nil
 	}
 
 	return model
 }
 
-func (dbc *DbContext) GetWithWhere(model interface{}, whereClause string, params ...interface{}) []interface{} {
-	var res []interface{}
-	err := dbc.connection.Model(&model).Where(whereClause, params).Select(&res)
-	if err != nil && err != pg.ErrNoRows {
-		// TODO: Log the error. Panic for now.
-		panic(err)
-	}
-
-	return res
-}
-
-func (dbc *DbContext) InsertModel(model interface{}) interface{} {
-	err := dbc.connection.Insert(&model)
-	if err != nil {
-		// TODO: Log the error.
-		return 0
-	}
-
-	return model
-}
-
-func (dbc *DbContext) UpdateModel(model interface{}) bool {
-	err := dbc.connection.Update(&model)
+func (dbc *DbContext) UpdateModel(model models.Persistable) bool {
+	err := dbc.connection.Update(model)
 	if err != nil {
 		// TODO: Log the error.
 		return false
@@ -134,8 +129,8 @@ func (dbc *DbContext) UpdateModel(model interface{}) bool {
 	return true
 }
 
-func (dbc *DbContext) DeleteModel(model interface{}) bool {
-	err := dbc.connection.Delete(&model)
+func (dbc *DbContext) DeleteModel(model models.Persistable) bool {
+	err := dbc.connection.Delete(model)
 	if err != nil {
 		// TODO: Log the error.
 		return false

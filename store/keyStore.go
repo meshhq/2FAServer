@@ -5,7 +5,7 @@ import (
 	"2FAServer/models"
 )
 
-// NewUserStore creates a new UserStore with the supplied values
+// NewKeyStore creates a new KeyStore with the supplied values
 func NewKeyStore(database *db.ContextInterface) *KeyStore {
 	key := new(models.Key)
 
@@ -16,38 +16,40 @@ func NewKeyStore(database *db.ContextInterface) *KeyStore {
 	return keyStore
 }
 
-// Store models a collection for an individual model.
+// KeyStore stores the connection ID and typed CRUD methods.
 type KeyStore struct {
 	Database       db.ContextInterface
 	CollectionName string
 }
 
-// GetKeysByUserID retrieves a list of Keys by UserID
+// KeyByID retrieves a Key by its ID.
 func (s *KeyStore) KeyByID(keyID int64) models.Key {
-	aKey := models.Key{
-		KeyID: keyID,
-	}
+	aKey := new(models.Key)
+	aKey.ID = keyID
 
-	s.Database.GetModel(&aKey)
+	s.Database.GetModel(aKey)
 
-	return aKey
+	return *aKey
 }
 
+// KeysByUserID retrieves a list of Keys by UserID.
 func (s *KeyStore) KeysByUserID(userID string) []models.Key {
-	var keys []models.Key
-	result := s.Database.GetWithWhere(&models.Key{}, "user_id = ?", userID)
+	var keys []interface{}
 
+	result := s.Database.GetWithWhere(new(models.Key), keys, "user_id = ?", userID)
+
+	var keySlice []models.Key
 	for _, record := range result {
-		keys = append(keys, record.(models.Key))
+		keySlice = append(keySlice, record.(models.Key))
 	}
 
-	return keys
+	return keySlice
 }
 
 // InsertKey creates a new Key record in the database.
 func (s *KeyStore) InsertKey(key models.Key) models.Key {
 	newKeyID := s.Database.InsertModel(&key)
-	if newKeyID == 0 {
+	if newKeyID.ObjectID() == 0 {
 		return models.Key{}
 	}
 
@@ -56,17 +58,20 @@ func (s *KeyStore) InsertKey(key models.Key) models.Key {
 
 // UpdateKey updates a Key records's key value.
 func (s *KeyStore) UpdateKey(keyID int64, key string) bool {
-	aKey := models.Key{
-		KeyID: keyID,
-		Key:   key,
+	aKey := new(models.Key)
+	aKey.ID = keyID
+
+	existingKey := s.Database.GetModel(aKey).(*models.Key)
+	if existingKey.ObjectID() == 0 {
+		return false
 	}
 
-	result := s.Database.UpdateModel(&aKey)
-	return result
+	existingKey.Key = key
+
+	return s.Database.UpdateModel(existingKey)
 }
 
 // DeleteKey removes a Key record from the database.
-func (s *KeyStore) DeleteKey(model models.Key) bool {
-	result := s.Database.DeleteModel(&model)
-	return result
+func (s *KeyStore) DeleteKey(key models.Key) bool {
+	return s.Database.DeleteModel(&key)
 }
