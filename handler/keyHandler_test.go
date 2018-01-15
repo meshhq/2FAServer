@@ -1,77 +1,108 @@
-package handler
+package handler_test
 
 import (
+	"2FAServer/models"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"strings"
 	"testing"
-	"time"
+
+	"github.com/icrowley/fake"
 
 	"2FAServer/configuration"
+	"2FAServer/db"
+	"2FAServer/handler"
 
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	h                     = new(KeyHandler)
-	newKeyJSON            = `{"user_id":"aGithubUserId","key":"12345678901234567890","provider":"aProvider"}`
-	newKeyJSONResponse    = `{"timestamp":` + strconv.Itoa(int(time.Now().Unix())) + `,"message":"12345678901234567890aProvideraGithubUserId"}`
-	updateKeyJSONResponse = `{"timestamp":` + strconv.Itoa(int(time.Now().Unix())) + `,"message":"` + testUserID + `"}`
-	deleteKeyJSONResponse = `{"timestamp":` + strconv.Itoa(int(time.Now().Unix())) + `,"message":"` + testUserID + `"}`
-	testUserID            = "1e3243566776998723t3reververv"
+	database db.ContextInterface = new(db.MockDbContext)
+	h                            = handler.NewKeyHandler(&database)
+	testKey                      = models.Key{
+		ID:       1,
+		UserID:   fake.UserName(),
+		Key:      fake.Password(10, 20, true, true, true),
+		Provider: fake.Word(),
+	}
+	testUpdateKey = models.Key{
+		Key: fake.Password(10, 20, true, true, true),
+	}
 )
+
+func stringifyKey(k models.Key) string {
+	nk, err := json.Marshal(k)
+	if err != nil {
+		panic("Error converting Key to JSON.")
+	}
+
+	res := string(nk)
+	return res
+}
 
 func TestCreateKey(t *testing.T) {
 	e := echo.New()
 
-	req := httptest.NewRequest(echo.POST, configuration.APIPath, strings.NewReader(newKeyJSON))
+	payload := stringifyKey(testKey)
+	req := httptest.NewRequest(echo.POST, configuration.APIPath, strings.NewReader(payload))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
 	// Assertions
 	if assert.NoError(t, h.CreateKey(c)) {
-		assert.Equal(t, http.StatusCreated, rec.Code)
-		assert.Equal(t, newKeyJSONResponse, rec.Body.String())
-	}
-}
+		expected, err := json.Marshal(models.NewJSONResponse(testKey, configuration.Success))
+		if err != nil {
+		}
 
-func TestGetKeys(t *testing.T) {
-	e := echo.New()
-
-	req := httptest.NewRequest(echo.GET, configuration.APIPath+"?user_id="+testUserID, nil)
-	rec := httptest.NewRecorder()
-	c := e.NewContext(req, rec)
-
-	// Assertions
-	if assert.NoError(t, h.GetKeys(c)) {
 		assert.Equal(t, http.StatusOK, rec.Code)
-
-		var raw []string
-		json.Unmarshal(rec.Body.Bytes(), &raw)
-		assert.True(t, len(raw) == 5)
+		assert.Equal(t, string(expected), rec.Body.String())
 	}
 }
+
+// func TestGetKeys(t *testing.T) {
+// 	e := echo.New()
+
+// 	req := httptest.NewRequest(echo.GET, configuration.APIPath+"?user_id="+testKey.UserID, nil)
+// 	rec := httptest.NewRecorder()
+// 	c := e.NewContext(req, rec)
+
+// 	// Assertions
+// 	if assert.NoError(t, h.GetKeys(c)) {
+// 		assert.Equal(t, http.StatusOK, rec.Code)
+
+// 		res := models.JSONResponse{}
+// 		json.Unmarshal(rec.Body.Bytes(), &res)
+
+// 		assert.True(t, len(res.Data.([]interface{})) == 5)
+// 	}
+// }
 
 func TestUpdateKey(t *testing.T) {
 	e := echo.New()
 
-	req := httptest.NewRequest(echo.PUT, configuration.APIPath, nil)
+	payload := stringifyKey(testUpdateKey)
+	req := httptest.NewRequest(echo.PUT, configuration.APIPath, strings.NewReader(payload))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 
 	c := e.NewContext(req, rec)
 	c.SetPath(configuration.APIPath + "/:key_id")
 	c.SetParamNames("key_id")
-	c.SetParamValues(testUserID)
+	c.SetParamValues(strconv.Itoa(int(testKey.ID)))
 
 	// Assertions
 	if assert.NoError(t, h.UpdateKey(c)) {
-		assert.Equal(t, http.StatusOK, rec.Code)
+		expected, err := json.Marshal(models.NewJSONResponse(nil, configuration.Success))
+		if err != nil {
+		}
 
-		assert.Equal(t, updateKeyJSONResponse, rec.Body.String())
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, string(expected), rec.Body.String())
 	}
 }
 
@@ -84,12 +115,15 @@ func TestDeleteKey(t *testing.T) {
 	c := e.NewContext(req, rec)
 	c.SetPath(configuration.APIPath + "/:key_id")
 	c.SetParamNames("key_id")
-	c.SetParamValues(testUserID)
+	c.SetParamValues(strconv.Itoa(int(testKey.ID)))
 
 	// Assertions
 	if assert.NoError(t, h.DeleteKey(c)) {
-		assert.Equal(t, http.StatusOK, rec.Code)
+		expected, err := json.Marshal(models.NewJSONResponse(nil, "Success."))
+		if err != nil {
+		}
 
-		assert.Equal(t, deleteKeyJSONResponse, rec.Body.String())
+		assert.Equal(t, http.StatusOK, rec.Code)
+		assert.Equal(t, string(expected), rec.Body.String())
 	}
 }
