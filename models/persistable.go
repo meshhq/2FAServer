@@ -11,6 +11,9 @@ type Persistable interface {
 	// ObjectID returns the object identifier for the type.
 	ObjectID() int64
 
+	// Sets the object identifier for the type.
+	SetID(int64)
+
 	// SetCreatedAt hydrates the created_at property of the model.
 	SetCreatedAt(int64)
 }

@@ -10,16 +10,21 @@ type Key struct {
 }
 
 // CollectionName return the name of the Model's table.
-func (k Key) CollectionName() string {
+func (k *Key) CollectionName() string {
 	return collectionName
 }
 
 // ObjectID returns the object identifier.
-func (k Key) ObjectID() int64 {
+func (k *Key) ObjectID() int64 {
 	return k.ID
 }
 
 // SetCreatedAt sets the created_at property of the model.
-func (k Key) SetCreatedAt(timestamp int64) {
+func (k *Key) SetCreatedAt(timestamp int64) {
 	//k.CreatedAt = timestamp
+}
+
+// SetCreatedAt sets the created_at property of the model.
+func (k *Key) SetID(ID int64) {
+	k.ID = ID
 }

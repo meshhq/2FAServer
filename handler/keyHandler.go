@@ -34,7 +34,7 @@ func (h *KeyHandler) CreateKey(c echo.Context) (err error) {
 		return c.JSON(http.StatusBadRequest, e)
 	}
 
-	nk := h.store.InsertKey(*rk)
+	nk := h.store.InsertKey(rk)
 	if nk.ID == 0 {
 		e := models.NewJSONResponse(nil, configuration.Success)
 		return c.JSON(http.StatusBadRequest, e)

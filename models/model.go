@@ -20,3 +20,8 @@ func (m *Model) ObjectID() int64 {
 func (m *Model) SetCreatedAt(timestamp int64) {
 	m.CreatedAt = timestamp
 }
+
+// SetCreatedAt sets the created_at property of the model.
+func (m *Model) SetID(ID int64) {
+	m.ID = ID
+}

@@ -20,8 +20,8 @@ func (dbc *MockDbContext) GetModel(model models.Persistable) models.Persistable 
 }
 
 // GetWithWhere retrieves a list of Models and filters by a where clause.
-func (dbc *MockDbContext) GetWithWhere(model models.Persistable, whereClause string, params ...interface{}) []models.Persistable {
-	arr := []models.Persistable{
+func (dbc *MockDbContext) GetWithWhere(model models.Persistable, refArray []interface{}, whereClause string, params ...interface{}) []interface{} {
+	arr := []interface{}{
 		&models.Model{ID: 1},
 		&models.Model{ID: 2},
 		&models.Model{ID: 3},
@@ -34,26 +34,7 @@ func (dbc *MockDbContext) GetWithWhere(model models.Persistable, whereClause str
 
 // InsertModel creates a new Key record in the database.
 func (dbc *MockDbContext) InsertModel(model models.Persistable) models.Persistable {
-	s := reflect.ValueOf(&model).Elem()
-	if s.Kind() != reflect.Struct {
-		return model
-	}
-
-	f := s.FieldByName("ID")
-	if f.IsValid() && f.CanSet() {
-		// A Value can be changed only if it is
-		// addressable and was not obtained by
-		// the use of unexported struct fields.
-
-		if f.Kind() == reflect.Int {
-			x := int64(7)
-			if !f.OverflowInt(x) {
-				f.SetInt(x)
-			}
-		}
-
-	}
-
+	model.SetID(1)
 	return model
 }
 

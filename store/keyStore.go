@@ -47,13 +47,13 @@ func (s *KeyStore) KeysByUserID(userID string) []models.Key {
 }
 
 // InsertKey creates a new Key record in the database.
-func (s *KeyStore) InsertKey(key models.Key) models.Key {
-	newKeyID := s.Database.InsertModel(&key)
+func (s *KeyStore) InsertKey(key *models.Key) models.Key {
+	newKeyID := s.Database.InsertModel(key)
 	if newKeyID.ObjectID() == 0 {
 		return models.Key{}
 	}
 
-	return key
+	return *key
 }
 
 // UpdateKey updates a Key records's key value.
