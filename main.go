@@ -10,12 +10,12 @@ import (
 
 func main() {
 	server := echo.New()
-	handler := new(handler.KeyHandler)
+	keyHandler := new(handler.KeyHandler)
 
-	server.POST(configuration.APIPath, handler.CreateKey)
-	server.GET(configuration.APIPath, handler.GetKeys)
-	server.PUT(configuration.APIPath+"/:key_id", handler.UpdateKey)
-	server.DELETE(configuration.APIPath+"/:key_id", handler.DeleteKey)
+	server.POST(configuration.APIPath, keyHandler.CreateKey)
+	server.GET(configuration.APIPath, keyHandler.GetKeys)
+	server.PUT(configuration.APIPath+"/:key_id", keyHandler.UpdateKey)
+	server.DELETE(configuration.APIPath+"/:key_id", keyHandler.DeleteKey)
 
 	t := &handler.HTMLTemplate{
 		Templates: template.Must(template.ParseGlob("public/views/otp.html")),
