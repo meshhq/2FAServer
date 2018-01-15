@@ -14,6 +14,7 @@ type ViewHandler struct {
 
 // GetQRCode
 func (vh *ViewHandler) GetQRCode(c echo.Context) error {
+	// TODO: Properly hookup db lookup once the API is fixed.
 	png, err := qrcode.Encode("https://reddit.com", qrcode.Medium, 200)
 	if err != nil {
 		return err
