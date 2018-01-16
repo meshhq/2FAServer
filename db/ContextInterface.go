@@ -1,13 +1,10 @@
 package db
 
-import "2FAServer/models"
-
 // ContextInterface for DB access.
 type ContextInterface interface {
-	CreateSchema() error
-	GetModel(model models.Persistable) models.Persistable
-	GetWithWhere(model models.Persistable, refArray []interface{}, whereClause string, params ...interface{}) []interface{}
-	InsertModel(model models.Persistable) models.Persistable
-	UpdateModel(model models.Persistable) bool
-	DeleteModel(model models.Persistable) bool
+	GetModel(model interface{}) bool
+	GetWithWhere(model interface{}, refArray interface{}, whereClause string, params ...interface{})
+	InsertModel(model interface{}) bool
+	UpdateModel(model interface{}) bool
+	DeleteModel(model interface{}) bool
 }
