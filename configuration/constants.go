@@ -4,4 +4,4 @@ package configuration
 const KeysAPIPath = "/keys"
 
 // OtpAPIPath defines the root route path for the OTP endpoints.
-const OtpAPIPath = "/otp"
+const OtpAPIPath = "/code"
