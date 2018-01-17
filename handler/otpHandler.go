@@ -35,7 +35,7 @@ func (h *TOTPHandler) Generate(c echo.Context) (err error) {
 		return GetErrorResponse(c, configuration.InvalidRequestPayload)
 	}
 
-	key, err := totp.Generate(totp.GenerateOpts{
+	otpToken, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      requestKey.Provider,
 		AccountName: requestKey.UserID,
 	})
@@ -43,7 +43,7 @@ func (h *TOTPHandler) Generate(c echo.Context) (err error) {
 		return GetErrorResponse(c, configuration.CreateOTPError)
 	}
 
-	requestKey.Key = key.Secret()
+	requestKey.Key = otpToken.Secret()
 
 	// Store new key in db.
 	savedKey, err := h.store.InsertKey(*requestKey)
@@ -51,7 +51,7 @@ func (h *TOTPHandler) Generate(c echo.Context) (err error) {
 		return GetErrorResponse(c, configuration.CreateKeyError)
 	}
 
-	png, err := qrcode.Encode(key.String(), qrcode.Medium, 200)
+	png, err := qrcode.Encode(otpToken.String(), qrcode.Medium, 200)
 	if err != nil {
 		return GetErrorResponse(c, configuration.CreateQRCodeError)
 	}
