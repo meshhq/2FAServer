@@ -32,6 +32,7 @@ func TestMain(m *testing.M) {
 	os.Exit(retCode)
 }
 
+// Test InsertKey
 func TestInsertKey(t *testing.T) {
 	nk := *testKey
 	nk.ID = 0
@@ -46,6 +47,7 @@ func TestInsertKey(t *testing.T) {
 	assert.Equal(t, testKey.Provider, k.Provider)
 }
 
+// Test InsertKey With Existing ID in Model argument.
 func TestInsertKeyWithExistingID(t *testing.T) {
 	nk := *testKey
 	nk.ID = 1
@@ -60,6 +62,7 @@ func TestInsertKeyWithExistingID(t *testing.T) {
 	assert.Equal(t, "", k.Provider)
 }
 
+// Test InsertKey With Missing Provider
 func TestInsertKeyWithMissingProvider(t *testing.T) {
 	nk := *testKey
 	nk.Provider = ""
@@ -74,6 +77,7 @@ func TestInsertKeyWithMissingProvider(t *testing.T) {
 	assert.Equal(t, "", k.Provider)
 }
 
+// Test InsertKey With Missing User ID
 func TestInsertKeyWithMissingUserID(t *testing.T) {
 	nk := *testKey
 	nk.UserID = ""
@@ -88,6 +92,7 @@ func TestInsertKeyWithMissingUserID(t *testing.T) {
 	assert.Equal(t, "", k.Provider)
 }
 
+// Test InsertKey With Missing Key
 func TestInsertKeyWithMissingKey(t *testing.T) {
 	nk := *testKey
 	nk.Key = ""
@@ -102,6 +107,7 @@ func TestInsertKeyWithMissingKey(t *testing.T) {
 	assert.Equal(t, "", k.Provider)
 }
 
+// TestUpdateKey
 func TestUpdateKey(t *testing.T) {
 	nk := *testKey
 	res, err := keyStore.UpdateKey(nk.ID, testUpdateKey.Key)
@@ -111,6 +117,7 @@ func TestUpdateKey(t *testing.T) {
 	assert.Equal(t, true, res)
 }
 
+// Test UpdateKey With Missing ID
 func TestUpdateKeyWithMissingID(t *testing.T) {
 	nk := *testKey
 	nk.ID = 0
@@ -122,6 +129,7 @@ func TestUpdateKeyWithMissingID(t *testing.T) {
 	assert.Equal(t, false, res)
 }
 
+// Test DeleteKey
 func TestDeleteKey(t *testing.T) {
 	res, err := keyStore.DeleteKey(*testKey)
 
@@ -130,6 +138,7 @@ func TestDeleteKey(t *testing.T) {
 	assert.Equal(t, true, res)
 }
 
+// TestDeleteKeyWithMissingID
 func TestDeleteKeyWithMissingID(t *testing.T) {
 	nk := *testKey
 	nk.ID = 0
@@ -141,6 +150,7 @@ func TestDeleteKeyWithMissingID(t *testing.T) {
 	assert.Equal(t, false, res)
 }
 
+// TestKeyByID
 func TestKeyByID(t *testing.T) {
 	k, err := keyStore.KeyByID(testKey.ID)
 
@@ -149,6 +159,7 @@ func TestKeyByID(t *testing.T) {
 	assert.Equal(t, testKey.ID, k.ID)
 }
 
+// TestKeyByIDWithMissingID
 func TestKeyByIDWithMissingID(t *testing.T) {
 	nk := *testKey
 	nk.ID = 0
@@ -160,6 +171,7 @@ func TestKeyByIDWithMissingID(t *testing.T) {
 	assert.Equal(t, 0, int(k.ID))
 }
 
+// TestKeyByIDWithEmptyID
 func TestKeyByIDWithEmptyID(t *testing.T) {
 	k, err := keyStore.KeyByID(0)
 
@@ -168,6 +180,7 @@ func TestKeyByIDWithEmptyID(t *testing.T) {
 	assert.Equal(t, 0, int(k.ID))
 }
 
+// Test KeysByUserID
 func TestKeysByUserID(t *testing.T) {
 	keys, err := keyStore.KeysByUserID(testKey.UserID)
 
@@ -176,10 +189,38 @@ func TestKeysByUserID(t *testing.T) {
 	assert.Equal(t, 5, len(keys))
 }
 
+// Test KeysByUserID With Missing UserID
 func TestKeysByUserIDWithMissingUserID(t *testing.T) {
 	keys, err := keyStore.KeysByUserID("")
 
 	// Assertions
 	assert.NotEqual(t, nil, err)
 	assert.Equal(t, 0, len(keys))
+}
+
+// TestKeyByUserIDAndProvider
+func TestKeyByUserIDAndProvider(t *testing.T) {
+	key, err := keyStore.KeyByUserIDProvider(testKey.UserID, testKey.Provider)
+
+	// Assertions
+	assert.Equal(t, nil, err)
+	assert.NotEqual(t, nil, key)
+}
+
+// Test KeyByUserIDAndProvider With Provider Missing
+func TestKeyByUserIDAndProviderWithProviderMissing(t *testing.T) {
+	key, err := keyStore.KeyByUserIDProvider(testKey.UserID, "")
+
+	// Assertions
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, 0, int(key.ID))
+}
+
+// Test KeyByUserIDAndProvider With UserID Missing
+func TestKeyByUserIDAndProviderWithUserIDMissing(t *testing.T) {
+	key, err := keyStore.KeyByUserIDProvider("", testKey.Provider)
+
+	// Assertions
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, 0, int(key.ID))
 }
