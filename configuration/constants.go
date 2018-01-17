@@ -1,6 +1,7 @@
 package configuration
 
-// APIPath defines the root route path of the exposed API.
-const APIPath = "/keys"
+// KeysAPIPath defines the root route path for the Keys endpoints.
+const KeysAPIPath = "/keys"
 
-const ViewTemplatesPath = "public/views/*.html"
+// OtpAPIPath defines the root route path for the OTP endpoints.
+const OtpAPIPath = "/code"
