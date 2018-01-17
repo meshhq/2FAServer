@@ -25,9 +25,9 @@ func main() {
 	}
 
 	server.Renderer = t
-	otpHandler := &handler.TOTPHandler{}
-	server.POST(configuration.OtpAPIPath+"/code", otpHandler.Generate)
-	server.POST(configuration.OtpAPIPath+"/code/validate", otpHandler.Validate)
+	otpHandler := handler.NewTOTPHandler(&database)
+	server.POST(configuration.OtpAPIPath, otpHandler.Generate)
+	server.POST(configuration.OtpAPIPath+"/validate", otpHandler.Validate)
 
 	server.Logger.Fatal(server.Start(":1323"))
 }

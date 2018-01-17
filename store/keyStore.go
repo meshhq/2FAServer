@@ -1,17 +1,16 @@
 package store
 
 import (
+	"2FAServer/configuration"
 	"2FAServer/db"
 	"2FAServer/models"
+	"errors"
 )
 
 // NewKeyStore creates a new KeyStore with the supplied values
 func NewKeyStore(database *db.ContextInterface) *KeyStore {
-	key := new(models.Key)
-
 	keyStore := new(KeyStore)
 	keyStore.Database = *database
-	keyStore.CollectionName = key.CollectionName()
 
 	return keyStore
 }
@@ -23,55 +22,90 @@ type KeyStore struct {
 }
 
 // KeyByID retrieves a Key by its ID.
-func (s *KeyStore) KeyByID(keyID int64) models.Key {
+func (s *KeyStore) KeyByID(keyID uint) (models.Key, error) {
+	if keyID == 0 {
+		return models.Key{}, errors.New(configuration.KeyIDMustBeEmtpy)
+	}
+
+	aKey := &models.Key{}
+	aKey.ID = keyID
+
+	s.Database.GetModel(&aKey)
+
+	return *aKey, nil
+}
+
+// KeysByUserID retrieves a list of Keys by UserID.
+func (s *KeyStore) KeysByUserID(userID string) ([]models.Key, error) {
+	var keys []models.Key
+	if userID == "" {
+		return keys, errors.New(configuration.UserIDMissing)
+	}
+
+	s.Database.GetWithWhere(&models.Key{}, &keys, "user_id = ?", userID)
+
+	var keySlice []models.Key
+	for _, record := range keys {
+		keySlice = append(keySlice, record)
+	}
+
+	if len(keySlice) == 0 {
+		keySlice = []models.Key{}
+	}
+
+	return keySlice, nil
+}
+
+// InsertKey creates a new Key record in the database.
+func (s *KeyStore) InsertKey(key models.Key) (models.Key, error) {
+	if key.ID != 0 {
+		return models.Key{}, errors.New(configuration.KeyIDMustBeEmtpy)
+	}
+
+	if key.Key == "" {
+		return models.Key{}, errors.New(configuration.KeySecretMissing)
+	}
+
+	if key.Provider == "" {
+		return models.Key{}, errors.New(configuration.ProviderMissing)
+	}
+
+	s.Database.InsertModel(&key)
+	if key.ID == 0 {
+		return models.Key{}, errors.New(configuration.CreateKeyError)
+	}
+
+	return key, nil
+}
+
+// UpdateKey updates a Key records's key value.
+func (s *KeyStore) UpdateKey(keyID uint, key string) (bool, error) {
+	if keyID == 0 {
+		return false, errors.New(configuration.KeyIDMissing)
+	}
+
+	if key == "" {
+		return false, errors.New(configuration.KeySecretMissing)
+	}
+
 	aKey := new(models.Key)
 	aKey.ID = keyID
 
 	s.Database.GetModel(aKey)
-
-	return *aKey
-}
-
-// KeysByUserID retrieves a list of Keys by UserID.
-func (s *KeyStore) KeysByUserID(userID string) []models.Key {
-	var keys []interface{}
-
-	result := s.Database.GetWithWhere(new(models.Key), keys, "user_id = ?", userID)
-
-	var keySlice []models.Key
-	for _, record := range result {
-		keySlice = append(keySlice, record.(models.Key))
+	if aKey.ID == 0 {
+		return false, errors.New(configuration.UpdateKeyError)
 	}
 
-	return keySlice
-}
+	aKey.Key = key
 
-// InsertKey creates a new Key record in the database.
-func (s *KeyStore) InsertKey(key *models.Key) models.Key {
-	newKeyID := s.Database.InsertModel(key)
-	if newKeyID.ObjectID() == 0 {
-		return models.Key{}
-	}
-
-	return *key
-}
-
-// UpdateKey updates a Key records's key value.
-func (s *KeyStore) UpdateKey(keyID int64, key string) bool {
-	aKey := new(models.Key)
-	aKey.ID = keyID
-
-	existingKey := s.Database.GetModel(aKey).(*models.Key)
-	if existingKey.ObjectID() == 0 {
-		return false
-	}
-
-	existingKey.Key = key
-
-	return s.Database.UpdateModel(existingKey)
+	return s.Database.UpdateModel(aKey), nil
 }
 
 // DeleteKey removes a Key record from the database.
-func (s *KeyStore) DeleteKey(key models.Key) bool {
-	return s.Database.DeleteModel(&key)
+func (s *KeyStore) DeleteKey(key models.Key) (bool, error) {
+	if key.ID == 0 {
+		return false, errors.New(configuration.KeyIDMissing)
+	}
+
+	return s.Database.DeleteModel(&key), nil
 }
