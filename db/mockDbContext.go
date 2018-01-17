@@ -15,38 +15,55 @@ func (dbc *MockDbContext) CreateSchema() error {
 }
 
 // GetModel retrieves a model by PK.
-func (dbc *MockDbContext) GetModel(model models.Persistable) models.Persistable {
-	return model
+func (dbc *MockDbContext) GetModel(model interface{}) bool {
+	return true
 }
 
 // GetWithWhere retrieves a list of Models and filters by a where clause.
-func (dbc *MockDbContext) GetWithWhere(model models.Persistable, refArray []interface{}, whereClause string, params ...interface{}) []interface{} {
-	arr := []interface{}{
-		&models.Model{ID: 1},
-		&models.Model{ID: 2},
-		&models.Model{ID: 3},
-		&models.Model{ID: 4},
-		&models.Model{ID: 5},
+func (dbc *MockDbContext) GetWithWhere(model interface{}, refArray interface{}, whereClause string, params ...interface{}) {
+	t := reflect.TypeOf(refArray)
+	if t.Kind() == reflect.Ptr {
+		t = t.Elem()
 	}
 
-	return arr
+	if t.Kind() == reflect.Slice {
+		t = t.Elem()
+	} else {
+		panic("Input param is not a slice")
+	}
+
+	sl := reflect.ValueOf(refArray).Elem()
+	if t.Kind() == reflect.Ptr {
+		sl = sl.Elem()
+	}
+
+	sliceType := sl.Type().Elem()
+	if sliceType.Kind() == reflect.Ptr {
+		sliceType = sliceType.Elem()
+	}
+
+	for i := 0; i < 5; i++ {
+		newitem := reflect.New(sliceType).Elem()
+		sl.Set(reflect.Append(sl, newitem))
+	}
 }
 
 // InsertModel creates a new Key record in the database.
-func (dbc *MockDbContext) InsertModel(model models.Persistable) models.Persistable {
-	model.SetID(1)
-	return model
+func (dbc *MockDbContext) InsertModel(model interface{}) bool {
+	nm := model.(*models.Key)
+
+	if nm.ID != 0 {
+		return false
+	}
+
+	nm.ID = 1
+	return true
 }
 
 // UpdateModel updates a Key records's key value.
-func (dbc *MockDbContext) UpdateModel(model models.Persistable) bool {
-	method := reflect.ValueOf(model).MethodByName("ObjectID")
-	in := make([]reflect.Value, method.Type().NumIn())
-
-	res := method.Call(in)
-	id := res[0].Interface().(int64)
-
-	if id < 5 {
+func (dbc *MockDbContext) UpdateModel(model interface{}) bool {
+	nm := *model.(*models.Key)
+	if nm.ID < 5 {
 		return true
 	}
 
@@ -54,14 +71,10 @@ func (dbc *MockDbContext) UpdateModel(model models.Persistable) bool {
 }
 
 // DeleteModel removes a Key record from the database.
-func (dbc *MockDbContext) DeleteModel(model models.Persistable) bool {
-	method := reflect.ValueOf(model).MethodByName("ObjectID")
-	in := make([]reflect.Value, method.Type().NumIn())
+func (dbc *MockDbContext) DeleteModel(model interface{}) bool {
+	nm := *model.(*models.Key)
 
-	res := method.Call(in)
-	id := res[0].Interface().(int64)
-
-	if id < 5 {
+	if nm.ID < 5 {
 		return true
 	}
 

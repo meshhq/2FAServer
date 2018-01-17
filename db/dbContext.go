@@ -3,51 +3,45 @@ package db
 import (
 	"2FAServer/models"
 	"fmt"
-	"log"
 	"os"
-	"time"
+	"strconv"
 
-	"github.com/go-pg/pg/orm"
-
-	"github.com/go-pg/pg"
+	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
 // DbContext defines an abstract Datbase connection.
 type DbContext struct {
-	connection *pg.DB
+	connection *gorm.DB
 }
 
 // NewDbContext DbContext constructor.
 func NewDbContext() ContextInterface {
 	dbc := new(DbContext)
-	dbc.connection = initializeDb()
+	dbc.connection = createConnection()
 
-	//isDebug, err := strconv.ParseBool(os.Getenv("DEBUG"))
-	//if isDebug && err == nil {
-	dbc.connection.OnQueryProcessed(func(event *pg.QueryProcessedEvent) {
-		query, err := event.FormattedQuery()
-		if err != nil {
-			panic(err)
-		}
-
-		log.Printf("%s %s", time.Since(event.StartTime), query)
-	})
-	//}
-
-	// Create table if not exist.
-	dbc.CreateSchema()
+	if !dbc.connection.HasTable("Keys") {
+		fmt.Println("Generating table schemas...")
+		dbc.connection.CreateTable(new(models.Key))
+	}
 
 	return dbc
 }
 
 // Private functions.
-func initializeDb() *pg.DB {
-	user := os.Getenv("PG_USERNAME")
-	password := os.Getenv("PG_PASSWORD")
-	database := os.Getenv("PG_DATABASE")
+func createConnection() *gorm.DB {
+	configMap := make(map[string]string)
+	dialect := "postgres"
+
+	// PG configuration schema
+	// https://godoc.org/github.com/lib/pq
+	configMap["user"] = os.Getenv("PG_USERNAME")
+	configMap["password"] = os.Getenv("PG_PASSWORD")
+	configMap["dbname"] = os.Getenv("PG_DATABASE")
+	configMap["sslmode"] = "disable"
+
 	hostname := os.Getenv("PG_HOSTNAME")
 	port := os.Getenv("PG_PORT")
-
 	if hostname == "" {
 		hostname = "127.0.0.1"
 	}
@@ -56,74 +50,88 @@ func initializeDb() *pg.DB {
 		port = "5432"
 	}
 
+	configMap["host"] = hostname
+	configMap["port"] = port
+
+	configString := ""
+	for k, v := range configMap {
+		configString += k + "=" + v + " "
+	}
+
 	fmt.Println("Connecting to " + hostname + ":" + port)
 
-	return pg.Connect(&pg.Options{
-		User:     user,
-		Password: password,
-		Database: database,
-		Addr:     hostname + ":" + port,
-	})
-}
-
-// CreateSchema defines a new of tables based on models.Key struct.
-func (dbc *DbContext) CreateSchema() error {
-	for _, model := range []interface{}{&models.Key{}} {
-		err := dbc.connection.CreateTable(model, &orm.CreateTableOptions{
-			IfNotExists: true,
-		})
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-func (dbc *DbContext) GetModel(model models.Persistable) models.Persistable {
-	err := dbc.connection.Select(model)
+	db, err := gorm.Open(dialect, configString)
 	if err != nil {
-		// TODO: Log the error. Panic for now.
 		panic(err)
 	}
 
-	return model
+	enableLog, _ := strconv.ParseBool(os.Getenv("DB_ENABLE_LOGS"))
+	db.LogMode(enableLog)
+
+	return db
 }
 
-func (dbc *DbContext) GetWithWhere(model models.Persistable, refArray []interface{}, whereClause string, params ...interface{}) []interface{} {
-	err := dbc.connection.Model(model).Where(whereClause, params...).Select(&refArray)
-	if err != nil {
+func (dbc *DbContext) GetModel(model interface{}) bool {
+	dbc.connection.First(model)
+	err := dbc.connection.GetErrors()
+	if len(err) > 0 {
 		// TODO: Log the error. Panic for now.
-		log.Printf("verbose error info: %#v", err)
+		panic(err)
+		return false
+	}
+
+	// Fetch success.
+	return true
+}
+
+func (dbc *DbContext) GetWithWhere(model interface{}, refArray interface{},
+	whereClause string, params ...interface{}) {
+
+	dbc.connection.Where(&model).Find(refArray)
+	err := dbc.connection.GetErrors()
+	if len(err) > 0 {
+		// TODO: Log the error. Panic for now.
 		panic(err)
 	}
-
-	return refArray
 }
 
-func (dbc *DbContext) InsertModel(model models.Persistable) models.Persistable {
-	err := dbc.connection.Insert(model)
-	if err != nil {
-		// TODO: Log the error.
-		return nil
+func (dbc *DbContext) InsertModel(model interface{}) bool {
+	isNew := dbc.connection.NewRecord(model)
+	if !isNew {
+		return false
 	}
 
-	return model
+	dbc.connection.Create(model)
+
+	fmt.Println(model)
+
+	err := dbc.connection.GetErrors()
+	if len(err) > 0 {
+		// TODO: Log the error. Panic for now.
+		panic(err)
+		return false
+	}
+
+	// Fetch success.
+	return true
 }
 
-func (dbc *DbContext) UpdateModel(model models.Persistable) bool {
-	err := dbc.connection.Update(model)
-	if err != nil {
-		// TODO: Log the error.
+func (dbc *DbContext) UpdateModel(model interface{}) bool {
+	dbc.connection.Save(model)
+	err := dbc.connection.GetErrors()
+	if len(err) > 0 {
+		// TODO: Log the error. Panic for now.
 		return false
 	}
 
 	return true
 }
 
-func (dbc *DbContext) DeleteModel(model models.Persistable) bool {
-	err := dbc.connection.Delete(model)
-	if err != nil {
-		// TODO: Log the error.
+func (dbc *DbContext) DeleteModel(model interface{}) bool {
+	dbc.connection.Delete(model)
+	err := dbc.connection.GetErrors()
+	if len(err) > 0 {
+		// TODO: Log the error. Panic for now.
 		return false
 	}
 

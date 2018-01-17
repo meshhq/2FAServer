@@ -30,14 +30,12 @@ func NewKeyHandler(database *db.ContextInterface) *KeyHandler {
 func (h *KeyHandler) CreateKey(c echo.Context) (err error) {
 	rk := new(models.Key)
 	if err = c.Bind(rk); err != nil {
-		e := models.NewJSONResponse(nil, configuration.InvalidRequestPayload)
-		return c.JSON(http.StatusBadRequest, e)
+		return GetErrorResponse(c, configuration.InvalidRequestPayload)
 	}
 
-	nk := h.store.InsertKey(rk)
-	if nk.ID == 0 {
-		e := models.NewJSONResponse(nil, configuration.Success)
-		return c.JSON(http.StatusBadRequest, e)
+	nk, err := h.store.InsertKey(*rk)
+	if err != nil || nk.ID == 0 {
+		return GetErrorResponse(c, configuration.CreateKeyError)
 	}
 
 	return c.JSON(http.StatusOK, models.NewJSONResponse(nk, configuration.Success))
@@ -47,32 +45,34 @@ func (h *KeyHandler) CreateKey(c echo.Context) (err error) {
 func (h *KeyHandler) GetKeys(c echo.Context) (err error) {
 	var userID = c.QueryParam("user_id")
 	if userID == "" {
-		err := models.NewJSONResponse(nil, configuration.UserIDMissing)
-		return c.JSON(http.StatusBadRequest, err)
+		return GetErrorResponse(c, configuration.UserIDMissing)
 	}
 
-	keys := h.store.KeysByUserID(userID)
+	keys, err := h.store.KeysByUserID(userID)
+	if err != nil {
+		return GetErrorResponse(c, configuration.KeysFetchError)
+	}
+
 	return c.JSON(http.StatusOK, models.NewJSONResponse(keys, configuration.Success))
 }
 
 // UpdateKey Updates existing key by key_id
 func (h *KeyHandler) UpdateKey(c echo.Context) (err error) {
-	keyID, err := strconv.ParseInt(c.Param("key_id"), 0, 0)
+	keyID, err := strconv.ParseUint(c.Param("key_id"), 0, 0)
 	if err != nil {
-		e := models.NewJSONResponse(nil, configuration.KeyIDMissing)
-		return c.JSON(http.StatusBadRequest, e)
+		return GetErrorResponse(c, configuration.KeyIDMissing)
+
 	}
 
 	payload := new(models.Key)
 	if err = c.Bind(payload); err != nil {
-		e := models.NewJSONResponse(nil, configuration.InvalidRequestPayload)
-		return c.JSON(http.StatusBadRequest, e)
+		return GetErrorResponse(c, configuration.InvalidRequestPayload)
 	}
 
 	// Modify key property
-	updated := h.store.UpdateKey(keyID, payload.Key)
-	if !updated {
-		return c.JSON(http.StatusBadRequest, models.NewJSONResponse(nil, configuration.UpdateKeyError))
+	updated, err := h.store.UpdateKey(uint(keyID), payload.Key)
+	if !updated || err != nil {
+		return GetErrorResponse(c, configuration.UpdateKeyError)
 	}
 
 	return c.JSON(http.StatusOK, models.NewJSONResponse(nil, configuration.Success))
@@ -82,16 +82,19 @@ func (h *KeyHandler) UpdateKey(c echo.Context) (err error) {
 func (h *KeyHandler) DeleteKey(c echo.Context) error {
 	keyID, err := strconv.ParseInt(c.Param("key_id"), 0, 0)
 	if err != nil {
-		e := models.NewJSONResponse(nil, configuration.InvalidRequestPayload)
-		return c.JSON(http.StatusBadRequest, e)
+		return GetErrorResponse(c, configuration.InvalidRequestPayload)
+	}
+
+	if keyID == 0 {
+		return GetErrorResponse(c, configuration.InvalidRequestPayload)
 	}
 
 	aKey := new(models.Key)
-	aKey.ID = keyID
+	aKey.ID = uint(keyID)
 
-	removed := h.store.DeleteKey(*aKey)
-	if !removed {
-		return c.JSON(http.StatusBadRequest, models.NewJSONResponse(nil, configuration.DeleteError))
+	removed, err := h.store.DeleteKey(*aKey)
+	if !removed || err != nil {
+		return GetErrorResponse(c, configuration.DeleteError)
 	}
 
 	return c.JSON(http.StatusOK, models.NewJSONResponse(nil, configuration.Success))
