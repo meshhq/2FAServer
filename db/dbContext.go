@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/jinzhu/gorm"
+	// Used to import a specific dialect.
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
@@ -33,8 +34,6 @@ func createConnection() *gorm.DB {
 	configMap := make(map[string]string)
 	dialect := "postgres"
 
-	// PG configuration schema
-	// https://godoc.org/github.com/lib/pq
 	configMap["user"] = os.Getenv("PG_USERNAME")
 	configMap["password"] = os.Getenv("PG_PASSWORD")
 	configMap["dbname"] = os.Getenv("PG_DATABASE")
@@ -75,8 +74,6 @@ func (dbc *DbContext) GetModel(model interface{}) bool {
 	dbc.connection.First(model)
 	err := dbc.connection.GetErrors()
 	if len(err) > 0 {
-		// TODO: Log the error. Panic for now.
-		panic(err)
 		return false
 	}
 
@@ -90,7 +87,6 @@ func (dbc *DbContext) GetWithWhere(model interface{}, refArray interface{},
 	dbc.connection.Where(&model).Find(refArray)
 	err := dbc.connection.GetErrors()
 	if len(err) > 0 {
-		// TODO: Log the error. Panic for now.
 		panic(err)
 	}
 }
@@ -103,12 +99,8 @@ func (dbc *DbContext) InsertModel(model interface{}) bool {
 
 	dbc.connection.Create(model)
 
-	fmt.Println(model)
-
 	err := dbc.connection.GetErrors()
 	if len(err) > 0 {
-		// TODO: Log the error. Panic for now.
-		panic(err)
 		return false
 	}
 
@@ -120,10 +112,10 @@ func (dbc *DbContext) UpdateModel(model interface{}) bool {
 	dbc.connection.Save(model)
 	err := dbc.connection.GetErrors()
 	if len(err) > 0 {
-		// TODO: Log the error. Panic for now.
 		return false
 	}
 
+	// Update success.
 	return true
 }
 
@@ -131,9 +123,9 @@ func (dbc *DbContext) DeleteModel(model interface{}) bool {
 	dbc.connection.Delete(model)
 	err := dbc.connection.GetErrors()
 	if len(err) > 0 {
-		// TODO: Log the error. Panic for now.
 		return false
 	}
 
+	// Delete success.
 	return true
 }
