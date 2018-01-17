@@ -81,10 +81,8 @@ func (dbc *DbContext) GetModel(model interface{}) bool {
 	return true
 }
 
-func (dbc *DbContext) GetWithWhere(model interface{}, refArray interface{},
-	whereClause string, params ...interface{}) {
-
-	dbc.connection.Where(&model).Find(refArray)
+func (dbc *DbContext) GetWithWhere(refArray interface{}, whereClause string, params ...interface{}) {
+	dbc.connection.Where(whereClause, params...).Find(refArray)
 	err := dbc.connection.GetErrors()
 	if len(err) > 0 {
 		panic(err)

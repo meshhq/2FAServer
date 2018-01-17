@@ -46,7 +46,7 @@ func (s *KeyStore) KeyByUserIDProvider(userID, provider string) (models.Key, err
 	}
 
 	var keys []models.Key
-	s.Database.GetWithWhere(&models.Key{}, &keys, "user_id = ? AND provider = ?", userID)
+	s.Database.GetWithWhere(&keys, "user_id = ? AND provider = ?", userID, provider)
 	if len(keys) == 0 {
 		return models.Key{}, errors.New("no key exist for given Provider and UserID association")
 	}
@@ -61,7 +61,7 @@ func (s *KeyStore) KeysByUserID(userID string) ([]models.Key, error) {
 		return keys, errors.New(configuration.UserIDMissing)
 	}
 
-	s.Database.GetWithWhere(&models.Key{}, &keys, "user_id = ?", userID)
+	s.Database.GetWithWhere(&keys, "user_id = ?", userID)
 	if len(keys) == 0 {
 		keys = []models.Key{}
 	}

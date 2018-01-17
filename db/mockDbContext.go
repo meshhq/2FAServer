@@ -20,7 +20,7 @@ func (dbc *MockDbContext) GetModel(model interface{}) bool {
 }
 
 // GetWithWhere retrieves a list of Models and filters by a where clause.
-func (dbc *MockDbContext) GetWithWhere(model interface{}, refArray interface{}, whereClause string, params ...interface{}) {
+func (dbc *MockDbContext) GetWithWhere(refArray interface{}, whereClause string, params ...interface{}) {
 	t := reflect.TypeOf(refArray)
 	if t.Kind() == reflect.Ptr {
 		t = t.Elem()
