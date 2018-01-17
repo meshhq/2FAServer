@@ -38,6 +38,7 @@ func (h *TOTPHandler) Generate(c echo.Context) (err error) {
 	otpToken, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      requestKey.Provider,
 		AccountName: requestKey.UserID,
+		Period:      30,
 	})
 	if err != nil {
 		return GetErrorResponse(c, configuration.CreateOTPError)
@@ -70,14 +71,13 @@ func (h *TOTPHandler) Validate(c echo.Context) (err error) {
 		return GetErrorResponse(c, configuration.InvalidRequestPayload)
 	}
 
-	// TODO: Search for secret in storage by User and Provider
-	key, err := h.store.KeysByUserID(token.UserID)
+	upKey, err := h.store.KeyByUserIDProvider(token.UserID, token.Provider)
 	if err != nil {
 		return GetErrorResponse(c, configuration.OTPValidationFailed)
 	}
 
-	valid := totp.Validate(token.Token, key[0].Key)
-	if valid {
+	valid := totp.Validate(token.Token, upKey.Key)
+	if !valid {
 		return GetErrorResponse(c, configuration.OTPValidationFailed)
 	}
 

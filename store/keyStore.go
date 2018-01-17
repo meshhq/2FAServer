@@ -35,6 +35,25 @@ func (s *KeyStore) KeyByID(keyID uint) (models.Key, error) {
 	return *aKey, nil
 }
 
+// KeyByID retrieves a Key by its ID.
+func (s *KeyStore) KeyByUserIDProvider(userID, provider string) (models.Key, error) {
+	if userID == "" {
+		return models.Key{}, errors.New(configuration.UserIDMissing)
+	}
+
+	if provider == "" {
+		return models.Key{}, errors.New(configuration.ProviderMissing)
+	}
+
+	var keys []models.Key
+	s.Database.GetWithWhere(&models.Key{}, &keys, "user_id = ? AND provider = ?", userID)
+	if len(keys) == 0 {
+		return models.Key{}, errors.New("no key exist for given Provider and UserID association")
+	}
+
+	return keys[0], nil
+}
+
 // KeysByUserID retrieves a list of Keys by UserID.
 func (s *KeyStore) KeysByUserID(userID string) ([]models.Key, error) {
 	var keys []models.Key
@@ -43,17 +62,11 @@ func (s *KeyStore) KeysByUserID(userID string) ([]models.Key, error) {
 	}
 
 	s.Database.GetWithWhere(&models.Key{}, &keys, "user_id = ?", userID)
-
-	var keySlice []models.Key
-	for _, record := range keys {
-		keySlice = append(keySlice, record)
+	if len(keys) == 0 {
+		keys = []models.Key{}
 	}
 
-	if len(keySlice) == 0 {
-		keySlice = []models.Key{}
-	}
-
-	return keySlice, nil
+	return keys, nil
 }
 
 // InsertKey creates a new Key record in the database.
