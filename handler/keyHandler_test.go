@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -20,21 +21,14 @@ import (
 )
 
 var (
-	database db.ContextInterface = new(db.MockDbContext)
-	h                            = handler.NewKeyHandler(&database)
-	testKey                      = models.Key{
-		ID:       1,
-		UserID:   fake.UserName(),
-		Key:      fake.Password(10, 20, true, true, true),
-		Provider: fake.Word(),
-	}
-	testUpdateKey = models.Key{
-		Key: fake.Password(10, 20, true, true, true),
-	}
+	database      db.ContextInterface = new(db.MockDbContext)
+	h                                 = handler.NewKeyHandler(&database)
+	testKey                           = new(models.Key)
+	testUpdateKey                     = new(models.Key)
 )
 
 func stringifyKey(k models.Key) string {
-	nk, err := json.Marshal(k)
+	nk, err := json.Marshal(&k)
 	if err != nil {
 		panic("Error converting Key to JSON.")
 	}
@@ -43,11 +37,32 @@ func stringifyKey(k models.Key) string {
 	return res
 }
 
+func setup() {
+	testKey.ID = 1
+	testKey.UserID = fake.UserName()
+	testKey.Key = fake.Password(10, 20, true, true, true)
+	testKey.Provider = fake.Word()
+
+	testUpdateKey.Key = fake.Password(10, 20, true, true, true)
+}
+
+func TestMain(m *testing.M) {
+	setup()
+	retCode := m.Run()
+	os.Exit(retCode)
+}
+
 func TestCreateKey(t *testing.T) {
 	e := echo.New()
 
-	payload := stringifyKey(testKey)
-	req := httptest.NewRequest(echo.POST, configuration.APIPath, strings.NewReader(payload))
+	nk := &models.Key{
+		Key:      testKey.Key,
+		Provider: testKey.Provider,
+		UserID:   testKey.UserID,
+	}
+
+	payload := stringifyKey(*nk)
+	req := httptest.NewRequest(echo.POST, configuration.KeysAPIPath, strings.NewReader(payload))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
 	rec := httptest.NewRecorder()
@@ -64,34 +79,60 @@ func TestCreateKey(t *testing.T) {
 	}
 }
 
-// func TestGetKeys(t *testing.T) {
-// 	e := echo.New()
+func TestCreateKeyWithMissingArguments(t *testing.T) {
+	e := echo.New()
 
-// 	req := httptest.NewRequest(echo.GET, configuration.APIPath+"?user_id="+testKey.UserID, nil)
-// 	rec := httptest.NewRecorder()
-// 	c := e.NewContext(req, rec)
+	nk := &models.Key{
+		Key:    testKey.Key,
+		UserID: testKey.UserID,
+	}
 
-// 	// Assertions
-// 	if assert.NoError(t, h.GetKeys(c)) {
-// 		assert.Equal(t, http.StatusOK, rec.Code)
+	payload := stringifyKey(*nk)
+	req := httptest.NewRequest(echo.POST, configuration.KeysAPIPath, strings.NewReader(payload))
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 
-// 		res := models.JSONResponse{}
-// 		json.Unmarshal(rec.Body.Bytes(), &res)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
 
-// 		assert.True(t, len(res.Data.([]interface{})) == 5)
-// 	}
-// }
+	// Assertions
+	if assert.NoError(t, h.CreateKey(c)) {
+		expected, err := json.Marshal(models.NewJSONResponse(nil, configuration.CreateKeyError))
+		if err != nil {
+		}
+
+		assert.Equal(t, http.StatusBadRequest, rec.Code)
+		assert.Equal(t, string(expected), rec.Body.String())
+	}
+}
+
+func TestGetKeys(t *testing.T) {
+	e := echo.New()
+
+	req := httptest.NewRequest(echo.GET, configuration.KeysAPIPath+"?user_id="+testKey.UserID, nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Assertions
+	if assert.NoError(t, h.GetKeys(c)) {
+		assert.Equal(t, http.StatusOK, rec.Code)
+
+		res := models.JSONResponse{}
+		json.Unmarshal(rec.Body.Bytes(), &res)
+
+		assert.True(t, len(res.Data.([]interface{})) == 5)
+	}
+}
 
 func TestUpdateKey(t *testing.T) {
 	e := echo.New()
 
-	payload := stringifyKey(testUpdateKey)
-	req := httptest.NewRequest(echo.PUT, configuration.APIPath, strings.NewReader(payload))
+	payload := stringifyKey(*testUpdateKey)
+	req := httptest.NewRequest(echo.PUT, configuration.KeysAPIPath, strings.NewReader(payload))
 	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
 	rec := httptest.NewRecorder()
 
 	c := e.NewContext(req, rec)
-	c.SetPath(configuration.APIPath + "/:key_id")
+	c.SetPath(configuration.KeysAPIPath + "/:key_id")
 	c.SetParamNames("key_id")
 	c.SetParamValues(strconv.Itoa(int(testKey.ID)))
 
@@ -109,11 +150,11 @@ func TestUpdateKey(t *testing.T) {
 func TestDeleteKey(t *testing.T) {
 	e := echo.New()
 
-	req := httptest.NewRequest(echo.DELETE, configuration.APIPath, nil)
+	req := httptest.NewRequest(echo.DELETE, configuration.KeysAPIPath, nil)
 	rec := httptest.NewRecorder()
 
 	c := e.NewContext(req, rec)
-	c.SetPath(configuration.APIPath + "/:key_id")
+	c.SetPath(configuration.KeysAPIPath + "/:key_id")
 	c.SetParamNames("key_id")
 	c.SetParamValues(strconv.Itoa(int(testKey.ID)))
 

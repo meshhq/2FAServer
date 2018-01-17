@@ -31,29 +31,31 @@ func NewTOTPHandler(database *db.ContextInterface) *TOTPHandler {
 // Generate a new QR Code for 2FA enrollment.
 func (h *TOTPHandler) Generate(c echo.Context) (err error) {
 	requestKey := new(models.Key)
-	if err = c.Bind(requestKey); err != nil {
-		e := models.NewJSONResponse(nil, configuration.InvalidRequestPayload)
-		return c.JSON(http.StatusBadRequest, e)
+	if err = c.Bind(&requestKey); err != nil {
+		return GetErrorResponse(c, configuration.InvalidRequestPayload)
 	}
 
-	key, err := totp.Generate(totp.GenerateOpts{
+	otpToken, err := totp.Generate(totp.GenerateOpts{
 		Issuer:      requestKey.Provider,
 		AccountName: requestKey.UserID,
+		Period:      30,
 	})
 	if err != nil {
-		return err
+		return GetErrorResponse(c, configuration.CreateOTPError)
 	}
 
-	// Store secret somewhere?
-	savedKey := h.store.InsertKey(requestKey)
-	if savedKey.ID == 0 {
-		e := models.NewJSONResponse(nil, configuration.CreateKeyError)
-		return c.JSON(http.StatusBadRequest, e)
+	requestKey.Key = otpToken.Secret()
+
+	// Store new key in db.
+	savedKey, err := h.store.InsertKey(*requestKey)
+	if err != nil || savedKey.ID == 0 {
+		return GetErrorResponse(c, configuration.CreateKeyError)
 	}
 
-	png, err := qrcode.Encode(key.String(), qrcode.Medium, 200)
+	// Generate QR Code.
+	png, err := qrcode.Encode(otpToken.String(), qrcode.Medium, 200)
 	if err != nil {
-		return err
+		return GetErrorResponse(c, configuration.CreateQRCodeError)
 	}
 
 	imgBase64Str := base64.StdEncoding.EncodeToString(png)
@@ -66,18 +68,18 @@ func (h *TOTPHandler) Generate(c echo.Context) (err error) {
 func (h *TOTPHandler) Validate(c echo.Context) (err error) {
 	token := new(models.Token)
 	if err = c.Bind(token); err != nil {
-		e := models.NewJSONResponse(nil, configuration.InvalidRequestPayload)
-		return c.JSON(http.StatusBadRequest, e)
+		return GetErrorResponse(c, configuration.InvalidRequestPayload)
 	}
 
-	// Search for secret in storage by User and Provider
-
-	valid := totp.Validate(token.Token, "")
-
-	if valid {
-		e := models.NewJSONResponse(nil, configuration.OTPValidationFailed)
-		return c.JSON(http.StatusBadRequest, e)
+	upKey, err := h.store.KeyByUserIDProvider(token.UserID, token.Provider)
+	if err != nil {
+		return GetErrorResponse(c, configuration.OTPValidationFailed)
 	}
 
-	return c.JSON(http.StatusBadRequest, models.NewJSONResponse(nil, configuration.Success))
+	valid := totp.Validate(token.Token, upKey.Key)
+	if !valid {
+		return GetErrorResponse(c, configuration.OTPValidationFailed)
+	}
+
+	return c.JSON(http.StatusOK, models.NewJSONResponse(nil, configuration.Success))
 }

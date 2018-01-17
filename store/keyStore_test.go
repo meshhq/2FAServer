@@ -3,6 +3,7 @@ package store
 import (
 	"2FAServer/db"
 	"2FAServer/models"
+	"os"
 	"testing"
 
 	"github.com/icrowley/fake"
@@ -10,67 +11,216 @@ import (
 )
 
 var (
-	database db.ContextInterface = new(db.MockDbContext)
-	keyStore                     = NewKeyStore(&database)
-	testKey                      = models.Key{
-		ID:       1,
-		UserID:   fake.UserName(),
-		Key:      fake.Password(10, 20, true, true, true),
-		Provider: fake.Word(),
-	}
-	testUpdateKey = models.Key{
-		Key: fake.Password(10, 20, true, true, true),
-	}
+	database      db.ContextInterface = new(db.MockDbContext)
+	keyStore                          = NewKeyStore(&database)
+	testKey                           = new(models.Key)
+	testUpdateKey                     = new(models.Key)
 )
 
+func setup() {
+	testKey.ID = 1
+	testKey.UserID = fake.UserName()
+	testKey.Key = fake.Password(10, 20, true, true, true)
+	testKey.Provider = fake.Word()
+
+	testUpdateKey.Key = fake.Password(10, 20, true, true, true)
+}
+
+func TestMain(m *testing.M) {
+	setup()
+	retCode := m.Run()
+	os.Exit(retCode)
+}
+
+// Test InsertKey
 func TestInsertKey(t *testing.T) {
-	nk := models.Key{
-		UserID:   testKey.UserID,
-		Key:      testKey.Key,
-		Provider: testKey.Provider,
-	}
+	nk := *testKey
+	nk.ID = 0
 
-	keyStore.InsertKey(&nk)
+	k, err := keyStore.InsertKey(nk)
 
 	// Assertions
-	assert.Equal(t, testKey.ID, nk.ID)
-	assert.Equal(t, testKey.UserID, nk.UserID)
-	assert.Equal(t, testKey.Key, nk.Key)
-	assert.Equal(t, testKey.Provider, nk.Provider)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, int(testKey.ID), int(k.ID))
+	assert.Equal(t, testKey.UserID, k.UserID)
+	assert.Equal(t, testKey.Key, k.Key)
+	assert.Equal(t, testKey.Provider, k.Provider)
 }
 
+// Test InsertKey With Existing ID in Model argument.
+func TestInsertKeyWithExistingID(t *testing.T) {
+	nk := *testKey
+	nk.ID = 1
+
+	k, err := keyStore.InsertKey(nk)
+
+	// Assertions
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, 0, int(k.ID))
+	assert.Equal(t, "", k.UserID)
+	assert.Equal(t, "", k.Key)
+	assert.Equal(t, "", k.Provider)
+}
+
+// Test InsertKey With Missing Provider
+func TestInsertKeyWithMissingProvider(t *testing.T) {
+	nk := *testKey
+	nk.Provider = ""
+
+	k, err := keyStore.InsertKey(nk)
+
+	// Assertions
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, 0, int(k.ID))
+	assert.Equal(t, "", k.UserID)
+	assert.Equal(t, "", k.Key)
+	assert.Equal(t, "", k.Provider)
+}
+
+// Test InsertKey With Missing User ID
+func TestInsertKeyWithMissingUserID(t *testing.T) {
+	nk := *testKey
+	nk.UserID = ""
+
+	k, err := keyStore.InsertKey(nk)
+
+	// Assertions
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, 0, int(k.ID))
+	assert.Equal(t, "", k.UserID)
+	assert.Equal(t, "", k.Key)
+	assert.Equal(t, "", k.Provider)
+}
+
+// Test InsertKey With Missing Key
+func TestInsertKeyWithMissingKey(t *testing.T) {
+	nk := *testKey
+	nk.Key = ""
+
+	k, err := keyStore.InsertKey(nk)
+
+	// Assertions
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, 0, int(k.ID))
+	assert.Equal(t, "", k.UserID)
+	assert.Equal(t, "", k.Key)
+	assert.Equal(t, "", k.Provider)
+}
+
+// TestUpdateKey
 func TestUpdateKey(t *testing.T) {
-	nk := testKey
-	res := keyStore.UpdateKey(nk.ID, testUpdateKey.Key)
+	nk := *testKey
+	res, err := keyStore.UpdateKey(nk.ID, testUpdateKey.Key)
 
 	// Assertions
-	assert.Equal(t, res, true)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, true, res)
 }
 
+// Test UpdateKey With Missing ID
+func TestUpdateKeyWithMissingID(t *testing.T) {
+	nk := *testKey
+	nk.ID = 0
+
+	res, err := keyStore.UpdateKey(nk.ID, testUpdateKey.Key)
+
+	// Assertions
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, false, res)
+}
+
+// Test DeleteKey
 func TestDeleteKey(t *testing.T) {
-	res := keyStore.DeleteKey(testKey)
+	res, err := keyStore.DeleteKey(*testKey)
 
 	// Assertions
-	assert.Equal(t, res, true)
+	assert.Equal(t, nil, err)
+	assert.Equal(t, true, res)
 }
 
-func TestKeyByID(t *testing.T) {
-	k := keyStore.KeyByID(testKey.ID)
+// TestDeleteKeyWithMissingID
+func TestDeleteKeyWithMissingID(t *testing.T) {
+	nk := *testKey
+	nk.ID = 0
+
+	res, err := keyStore.DeleteKey(nk)
 
 	// Assertions
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, false, res)
+}
+
+// TestKeyByID
+func TestKeyByID(t *testing.T) {
+	k, err := keyStore.KeyByID(testKey.ID)
+
+	// Assertions
+	assert.Equal(t, nil, err)
 	assert.Equal(t, testKey.ID, k.ID)
 }
 
-// // KeysByUserID retrieves a list of Keys by UserID.
-// func (s *KeyStore) KeysByUserID(userID string) []models.Key {
-// 	var keys []interface{}
+// TestKeyByIDWithMissingID
+func TestKeyByIDWithMissingID(t *testing.T) {
+	nk := *testKey
+	nk.ID = 0
 
-// 	result := s.Database.GetWithWhere(new(models.Key), keys, "user_id = ?", userID)
+	k, err := keyStore.KeyByID(nk.ID)
 
-// 	var keySlice []models.Key
-// 	for _, record := range result {
-// 		keySlice = append(keySlice, record.(models.Key))
-// 	}
+	// Assertions
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, 0, int(k.ID))
+}
 
-// 	return keySlice
-// }
+// TestKeyByIDWithEmptyID
+func TestKeyByIDWithEmptyID(t *testing.T) {
+	k, err := keyStore.KeyByID(0)
+
+	// Assertions
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, 0, int(k.ID))
+}
+
+// Test KeysByUserID
+func TestKeysByUserID(t *testing.T) {
+	keys, err := keyStore.KeysByUserID(testKey.UserID)
+
+	// Assertions
+	assert.Equal(t, nil, err)
+	assert.Equal(t, 5, len(keys))
+}
+
+// Test KeysByUserID With Missing UserID
+func TestKeysByUserIDWithMissingUserID(t *testing.T) {
+	keys, err := keyStore.KeysByUserID("")
+
+	// Assertions
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, 0, len(keys))
+}
+
+// TestKeyByUserIDAndProvider
+func TestKeyByUserIDAndProvider(t *testing.T) {
+	key, err := keyStore.KeyByUserIDProvider(testKey.UserID, testKey.Provider)
+
+	// Assertions
+	assert.Equal(t, nil, err)
+	assert.NotEqual(t, nil, key)
+}
+
+// Test KeyByUserIDAndProvider With Provider Missing
+func TestKeyByUserIDAndProviderWithProviderMissing(t *testing.T) {
+	key, err := keyStore.KeyByUserIDProvider(testKey.UserID, "")
+
+	// Assertions
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, 0, int(key.ID))
+}
+
+// Test KeyByUserIDAndProvider With UserID Missing
+func TestKeyByUserIDAndProviderWithUserIDMissing(t *testing.T) {
+	key, err := keyStore.KeyByUserIDProvider("", testKey.Provider)
+
+	// Assertions
+	assert.NotEqual(t, nil, err)
+	assert.Equal(t, 0, int(key.ID))
+}
