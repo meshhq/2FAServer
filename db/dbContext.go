@@ -21,6 +21,7 @@ func NewDbContext() ContextInterface {
 	dbc := new(DbContext)
 	dbc.connection = createConnection()
 
+	// TODO: Move this to a Migration function.
 	if !dbc.connection.HasTable("Keys") {
 		fmt.Println("Generating table schemas...")
 		dbc.connection.CreateTable(new(models.Key))
