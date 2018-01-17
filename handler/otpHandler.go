@@ -51,6 +51,7 @@ func (h *TOTPHandler) Generate(c echo.Context) (err error) {
 		return GetErrorResponse(c, configuration.CreateKeyError)
 	}
 
+	// Generate QR Code.
 	png, err := qrcode.Encode(otpToken.String(), qrcode.Medium, 200)
 	if err != nil {
 		return GetErrorResponse(c, configuration.CreateQRCodeError)
