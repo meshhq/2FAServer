@@ -51,32 +51,17 @@ func (dbc *MockDbContext) GetWithWhere(model interface{}, refArray interface{}, 
 // InsertModel creates a new Key record in the database.
 func (dbc *MockDbContext) InsertModel(model interface{}) bool {
 	nm := model.(*models.Key)
-
-	if nm.ID != 0 {
-		return false
-	}
-
 	nm.ID = 1
+
 	return true
 }
 
 // UpdateModel updates a Key records's key value.
 func (dbc *MockDbContext) UpdateModel(model interface{}) bool {
-	nm := *model.(*models.Key)
-	if nm.ID < 5 {
-		return true
-	}
-
-	return false
+	return true
 }
 
 // DeleteModel removes a Key record from the database.
 func (dbc *MockDbContext) DeleteModel(model interface{}) bool {
-	nm := *model.(*models.Key)
-
-	if nm.ID < 5 {
-		return true
-	}
-
-	return false
+	return true
 }
