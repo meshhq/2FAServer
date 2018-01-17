@@ -11,7 +11,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
-// DbContext defines an abstract Datbase connection.
+// DbContext defines an Database connection.
 type DbContext struct {
 	connection *gorm.DB
 }
