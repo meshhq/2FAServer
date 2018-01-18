@@ -33,31 +33,19 @@ func NewDbContext() ContextInterface {
 // Private functions.
 func createConnection() *gorm.DB {
 	dialect := "postgres"
-
-	configString := ""
-
-	configString += "user=" + os.Getenv("PG_USERNAME")
-	configString += "password=" + os.Getenv("PG_PASSWORD")
-	configString += "dbname=" + os.Getenv("PG_DATABASE")
-	configString += "sslmode=" + "disable"
-
-	hostname := os.Getenv("PG_HOSTNAME")
-	port := os.Getenv("PG_PORT")
-	if hostname == "" {
-		hostname = "127.0.0.1"
+	port, _ := strconv.Atoi(os.Getenv("PG_PORT"))
+	config := &Configuration{
+		User:     os.Getenv("PG_USERNAME"),
+		Password: os.Getenv("PG_PASSWORD"),
+		DbName:   os.Getenv("PG_DATABASE"),
+		SslMode:  "disable",
+		Hostname: os.Getenv("PG_HOSTNAME"),
+		Port:     port,
 	}
 
-	if port == "" {
-		port = "5432"
-	}
+	fmt.Println("Connecting to " + config.Hostname + ":" + strconv.Itoa(config.Port))
 
-	configString += "host=" + hostname
-	configString += "port=" + port
-
-	fmt.Println("Connecting to " + hostname + ":" + port)
-	fmt.Println("via: " + configString)
-
-	db, err := gorm.Open(dialect, configString)
+	db, err := gorm.Open(dialect, config.GetConfig())
 	if err != nil {
 		panic(err)
 	}
