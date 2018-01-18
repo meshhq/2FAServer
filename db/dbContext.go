@@ -32,13 +32,14 @@ func NewDbContext() ContextInterface {
 
 // Private functions.
 func createConnection() *gorm.DB {
-	configMap := make(map[string]string)
 	dialect := "postgres"
 
-	configMap["user"] = os.Getenv("PG_USERNAME")
-	configMap["password"] = os.Getenv("PG_PASSWORD")
-	configMap["dbname"] = os.Getenv("PG_DATABASE")
-	configMap["sslmode"] = "disable"
+	configString := ""
+
+	configString += "user=" + os.Getenv("PG_USERNAME")
+	configString += "password=" + os.Getenv("PG_PASSWORD")
+	configString += "dbname=" + os.Getenv("PG_DATABASE")
+	configString += "sslmode=" + "disable"
 
 	hostname := os.Getenv("PG_HOSTNAME")
 	port := os.Getenv("PG_PORT")
@@ -50,15 +51,11 @@ func createConnection() *gorm.DB {
 		port = "5432"
 	}
 
-	configMap["host"] = hostname
-	configMap["port"] = port
-
-	configString := ""
-	for k, v := range configMap {
-		configString += k + "=" + v + " "
-	}
+	configString += "host=" + hostname
+	configString += "port=" + port
 
 	fmt.Println("Connecting to " + hostname + ":" + port)
+	fmt.Println("via: " + configString)
 
 	db, err := gorm.Open(dialect, configString)
 	if err != nil {
