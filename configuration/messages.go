@@ -44,3 +44,6 @@ const OTPValidationFailed = "Token validation failed."
 
 // CreateQRCodeError string literal.
 const CreateQRCodeError = "Could not generate QR Code for enrollment."
+
+// NoResutlsForUserIDAndProvider string literal.
+const NoResutlsForUserIDAndProvider = "No key exist for given Provider and UserID association."
