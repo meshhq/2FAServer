@@ -39,13 +39,17 @@ func createConnection() *gorm.DB {
 		Password: os.Getenv("PG_PASSWORD"),
 		DbName:   os.Getenv("PG_DATABASE"),
 		SslMode:  "disable",
-		Hostname: os.Getenv("PG_HOSTNAME"),
-		Port:     port,
 	}
 
-	fmt.Println("Connecting to " + config.Hostname + ":" + strconv.Itoa(config.Port))
+	config.SetHost(os.Getenv("PG_HOSTNAME"))
+	config.SetPort(port)
 
-	db, err := gorm.Open(dialect, config.GetConfig())
+	connectionString := config.GetConfig()
+
+	fmt.Printf("Connecting to %v:%d\n", config.GetHost(), config.GetPort())
+	fmt.Printf("via: %v\n", connectionString)
+
+	db, err := gorm.Open(dialect, connectionString)
 	if err != nil {
 		panic(err)
 	}
