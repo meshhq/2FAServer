@@ -32,35 +32,24 @@ func NewDbContext() ContextInterface {
 
 // Private functions.
 func createConnection() *gorm.DB {
-	configMap := make(map[string]string)
 	dialect := "postgres"
-
-	configMap["user"] = os.Getenv("PG_USERNAME")
-	configMap["password"] = os.Getenv("PG_PASSWORD")
-	configMap["dbname"] = os.Getenv("PG_DATABASE")
-	configMap["sslmode"] = "disable"
-
-	hostname := os.Getenv("PG_HOSTNAME")
-	port := os.Getenv("PG_PORT")
-	if hostname == "" {
-		hostname = "127.0.0.1"
+	port, _ := strconv.Atoi(os.Getenv("PG_PORT"))
+	config := &Configuration{
+		User:     os.Getenv("PG_USERNAME"),
+		Password: os.Getenv("PG_PASSWORD"),
+		DbName:   os.Getenv("PG_DATABASE"),
+		SslMode:  "disable",
 	}
 
-	if port == "" {
-		port = "5432"
-	}
+	config.SetHost(os.Getenv("PG_HOSTNAME"))
+	config.SetPort(port)
 
-	configMap["host"] = hostname
-	configMap["port"] = port
+	connectionString := config.GetConfig()
 
-	configString := ""
-	for k, v := range configMap {
-		configString += k + "=" + v + " "
-	}
+	fmt.Printf("Connecting to %v:%d\n", config.GetHost(), config.GetPort())
+	fmt.Printf("via: %v\n", connectionString)
 
-	fmt.Println("Connecting to " + hostname + ":" + port)
-
-	db, err := gorm.Open(dialect, configString)
+	db, err := gorm.Open(dialect, connectionString)
 	if err != nil {
 		panic(err)
 	}

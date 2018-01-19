@@ -1,5 +1,6 @@
 .git
 .gitignore
+.circleci
 LICENSE
 VERSION
 README.md
@@ -10,5 +11,3 @@ docs
 
 .vscode
 2FAServer
-
-
