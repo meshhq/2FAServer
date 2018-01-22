@@ -14,7 +14,9 @@ ADD . .
 
 RUN go get -v ./... 
 
-RUN go install 
+RUN go get -u github.com/jteeuwen/go-bindata/...
+
+RUN make install 
 
 EXPOSE 1323
 
