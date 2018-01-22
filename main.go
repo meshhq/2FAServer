@@ -20,8 +20,15 @@ func main() {
 	server.PUT(configuration.KeysAPIPath+"/:key_id", keyHandler.UpdateKey)
 	server.DELETE(configuration.KeysAPIPath+"/:key_id", keyHandler.DeleteKey)
 
+	data, err := Asset("public/views/otp.html")
+	if err != nil {
+		panic(err)
+	}
+
+	optTemplate := template.New("OptTemplate")
+	optTemplate.Parse(string(data))
 	t := &handler.HTMLTemplate{
-		Templates: template.Must(template.ParseGlob("public/views/otp.html")),
+		Templates: template.Must(optTemplate, nil),
 	}
 
 	server.Renderer = t

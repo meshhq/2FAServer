@@ -14,5 +14,6 @@
 .glide/
 
 2FAServer
+bindata.go
 debug
 vendor/
