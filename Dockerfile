@@ -13,7 +13,6 @@ WORKDIR $GOPATH/src/2FAServer
 ADD . .
 
 RUN go get -v ./... 
-
 RUN go get -u github.com/jteeuwen/go-bindata/...
 
 RUN make install 
