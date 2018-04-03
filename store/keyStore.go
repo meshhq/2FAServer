@@ -1,10 +1,11 @@
 package store
 
 import (
-	"2FAServer/configuration"
-	"2FAServer/db"
-	"2FAServer/models"
 	"errors"
+
+	"github.com/meshhq/2FAServer/configuration"
+	"github.com/meshhq/2FAServer/db"
+	"github.com/meshhq/2FAServer/models"
 )
 
 // NewKeyStore creates a new KeyStore with the supplied values

@@ -1,8 +1,9 @@
 package db
 
 import (
-	"2FAServer/models"
 	"reflect"
+
+	"github.com/meshhq/2FAServer/models"
 )
 
 // MockDbContext defines a Mock object to use in unit tests.

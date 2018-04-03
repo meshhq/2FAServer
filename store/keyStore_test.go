@@ -1,10 +1,11 @@
 package store
 
 import (
-	"2FAServer/db"
-	"2FAServer/models"
 	"os"
 	"testing"
+
+	"github.com/meshhq/2FAServer/db"
+	"github.com/meshhq/2FAServer/models"
 
 	"github.com/icrowley/fake"
 	"github.com/stretchr/testify/assert"

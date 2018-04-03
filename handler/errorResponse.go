@@ -1,8 +1,9 @@
 package handler
 
 import (
-	"2FAServer/models"
 	"net/http"
+
+	"github.com/meshhq/2FAServer/models"
 
 	"github.com/labstack/echo"
 )

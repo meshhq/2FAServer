@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"2FAServer/configuration"
-	"2FAServer/db"
-	"2FAServer/models"
-	"2FAServer/store"
+	"github.com/meshhq/2FAServer/configuration"
+	"github.com/meshhq/2FAServer/db"
+	"github.com/meshhq/2FAServer/models"
+	"github.com/meshhq/2FAServer/store"
 
 	"github.com/labstack/echo"
 )
