@@ -1,20 +1,34 @@
-# This how we want to name the binary output
-BINARY=2FAServer
+GO_META_LINTER := $(GOPATH)/bin/gometalinter.v2
 
-.DEFAULT_GOAL: $(BINARY)
+$(GO_META_LINTER):
+	go get -u gopkg.in/alecthomas/gometalinter.v2	 
+	gometalinter.v2 --install &> /dev/null
 
-# Builds the project
-$(BINARY):
-	dep ensure
-	go-bindata public/...	
-	go build -o ${BINARY} .
+build: install-dep
+	# make lint	 
+	make test
+	go build
 
-install:
-	dep ensure
-	go-bindata public/...	
-	go install -o ${BINARY} .
+just-build: install-dep
+	# make lint	 
+	go build	
 
-clean:
-	if [ -f ${BINARY} ] ; then rm ${BINARY} ; fi
+# Downloads the 'dep' package and uses it to 
+# install all the dependencies for the project
+install-dep:
+	go get -u github.com/golang/dep/cmd/dep
+	dep ensure 
 
-.PHONY: clean install
+# Runs the linter over the project and runs
+# the automated tests for the project
+test: just-test
+
+# Runs the automated tests for the project
+just-test:
+	go list ./... | grep -v /vendor | xargs go test -p 1 -timeout=20s
+
+# Runs the linter over the project and
+# reports any linting errors
+lint: $(GO_META_LINTER)
+	test -z $(gofmt -s -l $GO_FILES)
+	gometalinter.v2 ./... --deadline=60s --vendor
