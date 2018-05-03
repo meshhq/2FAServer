@@ -4,8 +4,8 @@ jobs:
     docker:
       # specify the version
       - image: circleci/golang:1.8
-         
-    working_directory: /go/src/2FAServer
+
+    working_directory: /go/src/github.com/meshhq/2FAServer
 
     steps:
       - checkout
