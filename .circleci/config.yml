@@ -8,11 +8,10 @@ jobs:
       # specify the version
       - image: circleci/golang:1.8
          
-    working_directory: /go/src/2FAServer
+    working_directory: /go/src/github.com/meshhq/2FAServer
 
     steps:
-      - checkout   
-
-      - run: go get -u github.com/golang/dep/cmd/dep
-      - run: go get -u github.com/jteeuwen/go-bindata/...
-      - run: make     
+      - checkout
+      - run: 
+          name: Run unit tests
+          command: make build
