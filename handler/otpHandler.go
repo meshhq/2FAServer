@@ -4,10 +4,10 @@ import (
 	"encoding/base64"
 	"net/http"
 
-	"2FAServer/configuration"
-	"2FAServer/db"
-	"2FAServer/models"
-	"2FAServer/store"
+	"github.com/meshhq/2FAServer/configuration"
+	"github.com/meshhq/2FAServer/db"
+	"github.com/meshhq/2FAServer/models"
+	"github.com/meshhq/2FAServer/store"
 
 	"github.com/labstack/echo"
 	"github.com/pquerna/otp/totp"

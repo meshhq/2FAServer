@@ -1,10 +1,11 @@
 package main
 
 import (
-	"2FAServer/configuration"
-	"2FAServer/db"
-	"2FAServer/handler"
 	"html/template"
+
+	"github.com/meshhq/2FAServer/configuration"
+	"github.com/meshhq/2FAServer/db"
+	"github.com/meshhq/2FAServer/handler"
 
 	"github.com/labstack/echo"
 )
@@ -13,7 +14,7 @@ func main() {
 	server := echo.New()
 
 	database := db.NewDbContext()
-	keyHandler := handler.NewKeyHandler(&database)
+	keyHandler := handler.NewKeyHandler(database)
 
 	server.POST(configuration.KeysAPIPath, keyHandler.CreateKey)
 	server.GET(configuration.KeysAPIPath, keyHandler.GetKeys)

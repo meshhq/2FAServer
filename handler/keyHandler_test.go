@@ -1,7 +1,6 @@
 package handler_test
 
 import (
-	"2FAServer/models"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -12,9 +11,10 @@ import (
 
 	"github.com/icrowley/fake"
 
-	"2FAServer/configuration"
-	"2FAServer/db"
-	"2FAServer/handler"
+	"github.com/meshhq/2FAServer/configuration"
+	"github.com/meshhq/2FAServer/db"
+	"github.com/meshhq/2FAServer/handler"
+	"github.com/meshhq/2FAServer/models"
 
 	"github.com/labstack/echo"
 	"github.com/stretchr/testify/assert"
@@ -22,7 +22,7 @@ import (
 
 var (
 	database      db.ContextInterface = new(db.MockDbContext)
-	h                                 = handler.NewKeyHandler(&database)
+	h                                 = handler.NewKeyHandler(database)
 	testKey                           = new(models.Key)
 	testUpdateKey                     = new(models.Key)
 )

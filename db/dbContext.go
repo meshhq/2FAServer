@@ -1,10 +1,11 @@
 package db
 
 import (
-	"2FAServer/models"
 	"fmt"
 	"os"
 	"strconv"
+
+	"github.com/meshhq/2FAServer/models"
 
 	"github.com/jinzhu/gorm"
 	// Used to import a specific dialect.
