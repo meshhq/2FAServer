@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"2FAServer/configuration"
-	"2FAServer/db"
-	"2FAServer/models"
-	"2FAServer/store"
+	"github.com/meshhq/2FAServer/configuration"
+	"github.com/meshhq/2FAServer/db"
+	"github.com/meshhq/2FAServer/models"
+	"github.com/meshhq/2FAServer/store"
 
 	"github.com/labstack/echo"
 )
@@ -17,10 +17,11 @@ type KeyHandler struct {
 	store store.KeyStore
 }
 
-func NewKeyHandler(database *db.ContextInterface) *KeyHandler {
+// NewKeyHandler :
+func NewKeyHandler(database db.ContextInterface) *KeyHandler {
 	keyHandler := new(KeyHandler)
 
-	store := store.NewKeyStore(database)
+	store := store.NewKeyStore(&database)
 	keyHandler.store = *store
 
 	return keyHandler
