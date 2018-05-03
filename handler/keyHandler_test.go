@@ -22,7 +22,7 @@ import (
 
 var (
 	database      db.ContextInterface = new(db.MockDbContext)
-	h                                 = handler.NewKeyHandler(&database)
+	h                                 = handler.NewKeyHandler(database)
 	testKey                           = new(models.Key)
 	testUpdateKey                     = new(models.Key)
 )
