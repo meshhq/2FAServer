@@ -6,6 +6,7 @@ import (
 	"github.com/meshhq/2FAServer/configuration"
 	"github.com/meshhq/2FAServer/db"
 	"github.com/meshhq/2FAServer/handler"
+	"github.com/meshhq/2FAServer/qrcode"
 
 	"github.com/labstack/echo"
 )
@@ -21,7 +22,7 @@ func main() {
 	server.PUT(configuration.KeysAPIPath+"/:key_id", keyHandler.UpdateKey)
 	server.DELETE(configuration.KeysAPIPath+"/:key_id", keyHandler.DeleteKey)
 
-	data, err := Asset("public/views/otp.html")
+	data, err := qrcode.Asset("public/views/otp.html")
 	if err != nil {
 		panic(err)
 	}

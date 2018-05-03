@@ -3,7 +3,11 @@
 
 [[projects]]
   name = "github.com/boombuler/barcode"
-  packages = [".","qr","utils"]
+  packages = [
+    ".",
+    "qr",
+    "utils"
+  ]
   revision = "3cfea5ab600ae37946be2b763b8ec2c1cf2d272d"
   version = "v1.0.0"
 
@@ -27,7 +31,10 @@
 
 [[projects]]
   name = "github.com/jinzhu/gorm"
-  packages = [".","dialects/postgres"]
+  packages = [
+    ".",
+    "dialects/postgres"
+  ]
   revision = "5174cc5c242a728b435ea2be8a2f7f998e15429b"
   version = "v1.0"
 
@@ -45,14 +52,21 @@
 
 [[projects]]
   name = "github.com/labstack/gommon"
-  packages = ["color","log"]
+  packages = [
+    "color",
+    "log"
+  ]
   revision = "57409ada9da0f2afad6664c49502f8c50fbd8476"
   version = "0.2.3"
 
 [[projects]]
   branch = "master"
   name = "github.com/lib/pq"
-  packages = [".","hstore","oid"]
+  packages = [
+    ".",
+    "hstore",
+    "oid"
+  ]
   revision = "83612a56d3dd153a94a629cd64925371c9adad78"
 
 [[projects]]
@@ -75,14 +89,22 @@
 
 [[projects]]
   name = "github.com/pquerna/otp"
-  packages = [".","hotp","totp"]
+  packages = [
+    ".",
+    "hotp",
+    "totp"
+  ]
   revision = "b7b89250c468c06871d3837bee02e2d5c155ae19"
   version = "v1.0.0"
 
 [[projects]]
   branch = "master"
   name = "github.com/skip2/go-qrcode"
-  packages = [".","bitset","reedsolomon"]
+  packages = [
+    ".",
+    "bitset",
+    "reedsolomon"
+  ]
   revision = "cf5f9fa2f0d847edb8e038db7ed975e239095e1a"
 
 [[projects]]
@@ -106,7 +128,10 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/crypto"
-  packages = ["acme","acme/autocert"]
+  packages = [
+    "acme",
+    "acme/autocert"
+  ]
   revision = "13931e22f9e72ea58bb73048bc752b48c6d4d4ac"
 
 [[projects]]
@@ -118,6 +143,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "391ee8089bb9f9c6f590a406a82bb6f6d510f662ff0f6ed25957f87940adb635"
+  inputs-digest = "77f4ee5a7ca30307bc3ba99294173026872968dada5ea56d602dfd245f6d64ef"
   solver-name = "gps-cdcl"
   solver-version = 1
