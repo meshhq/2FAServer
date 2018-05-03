@@ -17,10 +17,11 @@ type KeyHandler struct {
 	store store.KeyStore
 }
 
-func NewKeyHandler(database *db.ContextInterface) *KeyHandler {
+// NewKeyHandler :
+func NewKeyHandler(database db.ContextInterface) *KeyHandler {
 	keyHandler := new(KeyHandler)
 
-	store := store.NewKeyStore(database)
+	store := store.NewKeyStore(&database)
 	keyHandler.store = *store
 
 	return keyHandler
